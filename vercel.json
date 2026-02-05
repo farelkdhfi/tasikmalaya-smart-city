@@ -3,6 +3,10 @@
     {
       "source": "/api/cctv/:match*",
       "destination": "https://atcs.tasikmalayakota.go.id/camera/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
