@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "source": "/api/cctv/:match*",
+      "destination": "https://atcs.tasikmalayakota.go.id/camera/:match*"
     }
   ]
 }
