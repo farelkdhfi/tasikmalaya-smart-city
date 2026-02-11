@@ -1,163 +1,40 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useMemo } from 'react'
 import { Link, useNavigate } from "react-router-dom"
-import { Canvas } from '@react-three/fiber'
-import { Float, Sparkles as ThreeSparkles, ContactShadows, Environment } from '@react-three/drei'
-import { motion, AnimatePresence } from 'framer-motion'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { 
+    Float, 
+    Environment, 
+    MeshDistortMaterial, 
+    ContactShadows, 
+    PerspectiveCamera,
+    Sphere,
+    Torus
+} from '@react-three/drei'
+import { motion } from 'framer-motion'
+import * as THREE from 'three'
 
 // Icons
 import {
-    Shield, Phone, Ticket, Flame, AlertTriangle,
-    GraduationCap, Leaf, Recycle, Baby, Fingerprint,
-    Info, Bus, Ambulance, HeartPulse, Calendar,
-    Menu, X, Sparkles, MoveRight, ArrowRight, ChevronRight,
-    ArrowUpRight, Circle, Disc, MapPin, Wind,
-    BookOpen, Clock
+    Menu, X, Sparkles, ArrowRight, ChevronRight,
+    ArrowUpRight, Search, LayoutGrid
 } from 'lucide-react'
+import { SECTION_DATA } from '../data/sectionData'
 
-// --- DATA ---
+// Assets
+import LogoImg from '../assets/images/logotasik.png'
 
-const SECTION_DATA = {
-    environment: {
-        title: "Urban Ecosystem",
-        subtitle: "Live Monitoring",
-        description: "Real-time environmental controls and city pulse analysis.",
-        items: [
-            {
-                id: 1,
-                img: "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?q=80&w=2070&auto=format&fit=crop",
-                link: '/Information', label: 'City Pulse', icon: Info,
-                desc: "Density Feed", stat: "Live"
-            },
-            {
-                id: 2,
-                img: "https://images.unsplash.com/photo-1570125909232-eb263c188f7e?q=80&w=2071&auto=format&fit=crop",
-                link: '/Transport', label: 'Mobility', icon: Bus,
-                desc: "Traffic AI", stat: "98%"
-            },
-            {
-                id: 3,
-                img: "https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?q=80&w=2032&auto=format&fit=crop",
-                link: '/Emergency', label: 'Response', icon: Ambulance,
-                desc: "Rapid Units", stat: "2min"
-            },
-            {
-                id: 4,
-                img: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=2070&auto=format&fit=crop",
-                link: '/Health', label: 'E-Health', icon: HeartPulse,
-                desc: "Bio-Data", stat: "Secure"
-            },
-            {
-                id: 5,
-                img: "https://images.unsplash.com/photo-1543269865-cbf427effbad?q=80&w=2070&auto=format&fit=crop",
-                link: '/Calendar', label: 'Events', icon: Calendar,
-                desc: "Agenda", stat: "12 Actv"
-            },
-        ]
-    },
-    education: {
-        title: "Learning Modules",
-        subtitle: "Curriculum",
-        description: "Select a specific pathway to access materials and certification.",
-        items: [
-            {
-                id: "01",
-                img: "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop",
-                link: '/education-center', label: 'Digital Academy', icon: GraduationCap,
-                desc: "Core competencies for digital citizenship and smart governance.", status: "Open"
-            },
-            {
-                id: "02",
-                img: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=1527&auto=format&fit=crop",
-                link: '/green', label: 'Eco Awareness', icon: Leaf,
-                desc: "Sustainability guides, urban farming, and carbon footprint reduction.", status: "New"
-            },
-            {
-                id: "03",
-                img: "https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?q=80&w=2070&auto=format&fit=crop",
-                link: '/recycling', label: 'Waste Management', icon: Recycle,
-                desc: "Smart recycling protocols and schedule for hazardous materials.", status: "Open"
-            },
-            {
-                id: "04",
-                img: "https://images.unsplash.com/photo-1485546246426-74dc88dec4d9?q=80&w=2069&auto=format&fit=crop",
-                link: '/smart-child', label: 'Child Development', icon: Baby,
-                desc: "Parenting resources, health tracking, and safety guidelines.", status: "Updated"
-            },
-            {
-                id: "05",
-                img: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop",
-                link: '/digital-footprints', label: 'Cyber Security', icon: Fingerprint,
-                desc: "Protecting your digital identity and personal data privacy.", status: "Premium"
-            },
-        ]
-    },
-    security: {
-        id: 'security',
-        title: "Security Ecosystem",
-        subtitle: "Integrated Protection",
-        description: "Real-time surveillance and rapid response systems protecting every corner of Tasikmalaya.",
-        items: [
-            {
-                img: "https://images.unsplash.com/photo-1555617766-c94804975da3?q=80&w=2070&auto=format&fit=crop",
-                link: '/traffic', label: 'Traffic AI', icon: Ticket,
-                span: 'col-span-1 md:col-span-2'
-            },
-            {
-                img: "https://images.unsplash.com/photo-1495542779398-9fec7dc796dd?q=80&w=1978&auto=format&fit=crop",
-                link: '/child-protection', label: 'Child Safety', icon: Shield,
-                span: 'col-span-1 md:col-span-1 md:row-span-2'
-            },
-            {
-                img: "https://images.unsplash.com/photo-1582139329536-e7284fece509?q=80&w=2000&auto=format&fit=crop",
-                link: '/police-call-center', label: 'Police Center', icon: Phone,
-                span: 'col-span-1 md:col-span-1'
-            },
-            {
-                img: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop",
-                link: '/fireman-call-center', label: 'Fire Response', icon: Flame,
-                span: 'col-span-1 md:col-span-2'
-            },
-            {
-                img: "https://images.unsplash.com/photo-1599233078028-1f56b77227dc?q=80&w=1929&auto=format&fit=crop",
-                link: '/regional-disaster', label: 'Disaster Relief', icon: AlertTriangle,
-                span: 'col-span-1 md:col-span-2'
-            },
-        ]
-    }
-}
+// --- SHARED COMPONENTS ---
 
-// --- 3D COMPONENT ---
-const LandingOrb = () => {
-    return (
-        <Float speed={2} rotationIntensity={0.5} floatIntensity={0.5}>
-            <ThreeSparkles count={40} scale={3} size={4} speed={0.4} opacity={0.5} color="#fbbf24" noise={0.2} />
-            <ThreeSparkles count={40} scale={3.5} size={3} speed={0.3} opacity={0.4} color="#22d3ee" noise={0.3} />
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-                <torusGeometry args={[2.5, 0.005, 32, 100]} />
-                <meshStandardMaterial color="#a1a1aa" transparent opacity={0.2} />
-            </mesh>
-            <mesh rotation={[Math.PI / 1.5, Math.PI / 4, 0]}>
-                <torusGeometry args={[1.8, 0.005, 32, 100]} />
-                <meshStandardMaterial color="#d4d4d8" transparent opacity={0.15} />
-            </mesh>
-        </Float>
-    )
-}
-
-// --- SHARED UI COMPONENTS ---
-
-const Button = ({ children, primary, onClick, className = "" }) => (
-    <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={onClick}
-        className={`px-8 py-4 rounded-sm text-xs font-medium uppercase tracking-[0.15em] transition-all duration-300 flex items-center gap-3 border ${primary
-                ? 'bg-zinc-900 text-white border-zinc-900 hover:bg-black'
-                : 'bg-white text-zinc-900 border-zinc-200 hover:border-zinc-900'
-            } ${className}`}
-    >
-        {children}
-    </motion.button>
+const SectionHeader = ({ title, subtitle, linkText = "View All", linkTo = "#" }) => (
+    <div className="flex justify-between items-end mb-8 px-2 border-b border-zinc-200/60 pb-4">
+        <div>
+            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-1 block">{subtitle}</span>
+            <h2 className="text-2xl md:text-3xl font-semibold text-zinc-900 tracking-tight">{title}</h2>
+        </div>
+        <Link to={linkTo} className="hidden md:flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors group">
+            {linkText} <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+        </Link>
+    </div>
 )
 
 const Navbar = () => {
@@ -165,460 +42,417 @@ const Navbar = () => {
     const [mobileMenu, setMobileMenu] = useState(false)
 
     useEffect(() => {
-        const handleScroll = () => setScrolled(window.scrollY > 50)
+        const handleScroll = () => setScrolled(window.scrollY > 20)
         window.addEventListener('scroll', handleScroll)
         return () => window.removeEventListener('scroll', handleScroll)
     }, [])
 
     return (
-        <header className={`fixed top-0 w-full z-50 transition-all duration-700 ${scrolled ? 'bg-[#fafafa]/80 backdrop-blur-xl border-b border-zinc-200/50 py-4' : 'bg-transparent py-6'
+        <header className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-xl border-b border-zinc-200/50 py-3' : 'bg-transparent py-5'
             }`}>
-            <div className=" mx-auto px-6 flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-white border border-zinc-200 flex items-center justify-center shadow-sm">
-                        <div className="w-1.5 h-1.5 bg-zinc-900 rounded-full"></div>
+            <div className="max-w-6xl mx-auto px-6 flex justify-between items-center">
+                <div className="flex items-center gap-2 text-zinc-900">
+                    <div className="w-6 h-6 flex items-center justify-center">
+                        <img src={LogoImg} alt="Logo" className="h-full" />
                     </div>
-                    <span className="text-xs font-bold tracking-[0.2em] uppercase text-zinc-900">Tasik.AI</span>
+                    <span className="text-lg font-medium tracking-tight">Kota Tasikmalaya</span>
                 </div>
 
-                <nav className='hidden md:flex gap-10'>
+                <nav className='hidden md:flex items-center gap-6'>
                     {['Overview', 'Services', 'Intelligence', 'Data'].map((item) => (
-                        <a key={item} href="#" className='text-[10px] uppercase tracking-[0.15em] font-medium text-zinc-500 hover:text-zinc-900 transition-colors'>
+                        <a key={item} href="#" className='text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors'>
                             {item}
                         </a>
                     ))}
                 </nav>
 
-                <div className="hidden md:block">
-                    <button className="text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-colors">Log In</button>
+                <div className="hidden md:flex gap-3 items-center">
+                    <div className="w-8 h-8 rounded-full bg-zinc-100 flex items-center justify-center hover:bg-zinc-200 cursor-pointer transition-colors">
+                        <Search size={16} className="text-zinc-500" />
+                    </div>
+                    <button className="bg-zinc-900 text-white px-4 py-2 rounded-full text-xs font-medium hover:bg-zinc-800 transition-colors shadow-lg shadow-zinc-900/10">
+                        My Account
+                    </button>
                 </div>
+
                 <button className="md:hidden text-zinc-900" onClick={() => setMobileMenu(!mobileMenu)}>
-                    {mobileMenu ? <X size={20} /> : <Menu size={20} />}
+                    {mobileMenu ? <X size={24} /> : <Menu size={24} />}
                 </button>
             </div>
         </header>
     )
 }
 
-// --- ENVIRONMENT SECTION (EXPANDING CARDS) ---
+// --- WIDGET STYLE NAVIGATION (ENVIRONMENT) ---
 const EnvironmentSection = () => {
     const data = SECTION_DATA.environment;
-    const [activeId, setActiveId] = useState(2);
 
     return (
-        <section className="py-24 md:py-32 bg-[#fafafa] relative border-t border-zinc-200 overflow-hidden">
-            {/* Background Decoration */}
-            <div className="absolute left-0 top-1/4 w-full h-[1px] bg-zinc-100"></div>
+        <section className="py-24 bg-[#F5F5F7]">
+            <div className="max-w-6xl mx-auto px-6">
+                <SectionHeader title={data.title} subtitle={data.subtitle} linkTo="/environment-dashboard" />
 
-            <div className="mx-auto px-6 md:px-12">
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-                    <div>
-                        <div className="flex items-center gap-3 mb-4 text-emerald-600/80">
-                            <Wind size={16} className="animate-pulse" />
-                            <h3 className="text-xs font-bold uppercase tracking-[0.2em]">{data.subtitle}</h3>
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-light text-zinc-900 tracking-tighter leading-none">
-                            {data.title}
-                        </h2>
-                    </div>
-                    <div className="flex gap-4">
-                        <div className="px-4 py-2 border border-zinc-200 rounded-full flex items-center gap-2 bg-white/50 backdrop-blur-sm">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <span className="text-[10px] font-mono uppercase text-zinc-500">AQI: 45 Good</span>
-                        </div>
-                        <div className="px-4 py-2 border border-zinc-200 rounded-full flex items-center gap-2 bg-white/50 backdrop-blur-sm">
-                            <MapPin size={12} className="text-zinc-400" />
-                            <span className="text-[10px] font-mono uppercase text-zinc-500">TSM Central</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* THE EXPANDING GRID */}
-                <div className="flex flex-col md:flex-row h-[600px] md:h-[500px] gap-2 md:gap-4 w-full">
-                    {data.items.map((item) => {
-                        const isActive = activeId === item.id;
-                        return (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {data.items.map((item) => (
+                        <Link to={item.link} key={item.id} className="block group">
                             <motion.div
-                                layout
-                                key={item.id}
-                                onMouseEnter={() => setActiveId(item.id)}
-                                transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                                className={`relative cursor-pointer rounded-sm overflow-hidden border border-zinc-200 transition-colors duration-500 ease-out
-                    ${isActive ? 'md:flex-[3] flex-[3] border-zinc-400 shadow-xl' : 'md:flex-[1] flex-[1] grayscale hover:grayscale-0 bg-white'}
-                `}
+                                whileHover={{ y: -4, scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="bg-white rounded-3xl p-4 h-48 md:h-56 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-blue-500/5 border border-zinc-100 transition-all duration-300 relative overflow-hidden"
                             >
-                                {/* Pembungkus Link Utama */}
-                                <Link to={item.link} className="absolute inset-0 z-10">
-                                    <span className="sr-only">Buka {item.label}</span>
-                                </Link>
-
-                                {/* Background Image */}
-                                <img
-                                    src={item.img}
-                                    alt={item.label}
-                                    className="absolute inset-0 w-full h-full object-cover"
-                                />
-
-                                {/* Overlay Gradient */}
-                                <div className={`absolute inset-0 transition-all duration-500 ${isActive ? 'bg-gradient-to-t from-zinc-900/90 via-zinc-900/20 to-transparent' : 'bg-zinc-900/40 hover:bg-zinc-900/20'}`}></div>
-
-                                {/* Content Container */}
-                                <div className="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none">
-                                    {/* Top Bar */}
-                                    <div className="flex justify-between items-start">
-                                        <div className={`w-10 h-10 rounded-sm flex items-center justify-center backdrop-blur-md border transition-all duration-300
-                            ${isActive ? 'bg-white text-zinc-900 border-white' : 'bg-black/30 text-white border-white/20'}
-                        `}>
-                                            <item.icon size={18} />
-                                        </div>
-
-                                        <AnimatePresence>
-                                            {isActive && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, x: 20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    exit={{ opacity: 0 }}
-                                                    className="flex items-center gap-2"
-                                                >
-                                                    <span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-widest rounded-full border border-emerald-500/30 backdrop-blur-md">
-                                                        {item.stat}
-                                                    </span>
-                                                    {/* Tombol dihapus, diganti visual indicator saja jika perlu */}
-                                                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-                                                        <ArrowUpRight size={14} className="text-zinc-900" />
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                                {/* Header: Icon & Arrow */}
+                                <div className="flex justify-between items-start z-10">
+                                    <div className="w-10 h-10 rounded-2xl bg-zinc-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                                        <item.icon size={20} />
                                     </div>
-
-                                    {/* Bottom Info */}
-                                    <div className="relative overflow-hidden">
-                                        <motion.h3
-                                            layout="position"
-                                            className={`font-medium uppercase tracking-tight text-white mb-1 transition-all duration-300 ${isActive ? 'text-2xl md:text-3xl' : 'text-sm md:text-lg md:-rotate-90 md:origin-bottom-left md:translate-x-8 md:-translate-y-8 md:whitespace-nowrap'}`}
-                                        >
-                                            {item.label}
-                                        </motion.h3>
-
-                                        <AnimatePresence>
-                                            {isActive && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                >
-                                                    <p className="text-zinc-300 text-sm font-light max-w-xs">{item.desc}</p>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
+                                    <div className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-blue-600 transition-colors">
+                                        <ArrowUpRight size={14} />
                                     </div>
+                                </div>
+
+                                {/* Content: Label & Desc */}
+                                <div className="z-10 mt-auto">
+                                    <h3 className="text-lg font-semibold text-zinc-900 leading-tight mb-1 group-hover:text-blue-600 transition-colors">
+                                        {item.label}
+                                    </h3>
+                                    <p className="text-xs text-zinc-500 font-medium">{item.desc}</p>
+                                </div>
+
+                                {/* Subtle Background Image */}
+                                <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 pointer-events-none">
+                                    <img src={item.img} alt="" className="w-full h-full object-cover grayscale" />
                                 </div>
                             </motion.div>
-                        )
-                    })}
+                        </Link>
+                    ))}
                 </div>
             </div>
         </section>
     )
 }
 
-// --- NEW DESIGN: EDUCATION SECTION (DIRECTORY STYLE WITH THUMBNAILS) ---
+// --- LIST STYLE NAVIGATION (EDUCATION) ---
 const EducationSection = () => {
     const data = SECTION_DATA.education;
-    const [activeIndex, setActiveIndex] = useState(0);
 
     return (
-        <section className="py-24 bg-white relative border-b border-zinc-100">
-            <div className="mx-auto px-6 md:px-12">
+        <section className="py-24 bg-white">
+            <div className="max-w-6xl mx-auto px-6">
+                <SectionHeader title={data.title} subtitle={data.subtitle} linkTo="/education-hub" />
 
-                {/* Header Compact */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
-                    <div>
-                        <div className="flex items-center gap-3 mb-3">
-                            <BookOpen size={16} className="text-zinc-400" />
-                            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em]">{data.subtitle}</h3>
-                        </div>
-                        <h2 className="text-3xl md:text-5xl font-light text-zinc-900 tracking-tight">
-                            {data.title}
-                        </h2>
-                    </div>
-                    <div className="max-w-md">
-                        <p className="text-zinc-500 font-light text-sm md:text-base leading-relaxed">
-                            {data.description} All modules are integrated with your City ID profile.
-                        </p>
-                    </div>
-                </div>
+                <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden">
+                    {data.items.map((item, idx) => (
+                        <Link to={item.link} key={idx} className="block group">
+                            <div className={`relative flex items-center p-5 md:p-6 hover:bg-zinc-50 transition-colors duration-200 ${idx !== data.items.length - 1 ? 'border-b border-zinc-100' : ''}`}>
+                                
+                                {/* Thumbnail / Icon */}
+                                <div className="w-14 h-14 rounded-xl overflow-hidden bg-zinc-100 shrink-0 border border-zinc-100 group-hover:border-zinc-300 transition-colors">
+                                    <img src={item.img} alt="" className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300" />
+                                </div>
 
-                {/* Main Content: Split Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-
-                    {/* LEFT: The Menu List with Thumbnails */}
-                    <div className="lg:col-span-5 flex flex-col">
-                        {data.items.map((item, idx) => (
-                            <Link
-                                to={item.link}
-                                key={idx}
-                                onMouseEnter={() => setActiveIndex(idx)}
-                                className={`group relative py-4 border-b border-zinc-100 transition-all duration-300 cursor-pointer ${activeIndex === idx ? 'border-zinc-900' : ''}`}
-                            >
-                                <div className="flex items-center justify-between">
-                                    {/* Left side: ID + Image + Text */}
-                                    <div className="flex items-center gap-5">
-                                        <span className={`text-xs font-mono transition-colors duration-300 ${activeIndex === idx ? 'text-zinc-900 font-bold' : 'text-zinc-300'}`}>
-                                            {item.id}
-                                        </span>
-
-                                        {/* THUMBNAIL IMAGE ADDED HERE */}
-                                        <div className={`relative w-20 h-14 rounded-sm overflow-hidden shrink-0 border transition-all duration-300 ${activeIndex === idx ? 'border-zinc-900 shadow-sm' : 'border-zinc-200 opacity-80 group-hover:opacity-100'}`}>
-                                            <img
-                                                src={item.img}
-                                                alt={item.label}
-                                                className={`w-full h-full object-cover transition-all duration-500 ${activeIndex === idx ? 'grayscale-0 scale-110' : 'grayscale group-hover:grayscale-0 scale-100'}`}
-                                            />
-                                        </div>
-
-                                        <div>
-                                            <h3 className={`text-lg font-medium transition-colors duration-300 ${activeIndex === idx ? 'text-zinc-900' : 'text-zinc-500 group-hover:text-zinc-800'}`}>
-                                                {item.label}
-                                            </h3>
-                                        </div>
+                                {/* Text Content */}
+                                <div className="ml-5 flex-grow">
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h3 className="text-base font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors">
+                                            {item.label}
+                                        </h3>
+                                        {item.status === "New" && (
+                                            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold uppercase">New</span>
+                                        )}
                                     </div>
+                                    <p className="text-sm text-zinc-500">{item.desc}</p>
+                                </div>
 
-                                    {/* Right side: Status & Arrow */}
-                                    <div className="flex items-center gap-4 pl-4">
-                                        <span className={`text-[10px] uppercase tracking-wider px-2 py-1 rounded-sm border hidden md:inline-block ${activeIndex === idx ? 'border-zinc-900 text-zinc-900' : 'border-transparent text-zinc-400'}`}>
-                                            {item.status}
-                                        </span>
-                                        <ArrowRight size={16} className={`transform transition-all duration-300 ${activeIndex === idx ? 'opacity-100 translate-x-0 text-zinc-900' : 'opacity-0 -translate-x-4 text-zinc-300'}`} />
+                                {/* Action Area */}
+                                <div className="flex items-center gap-4">
+                                    <span className="hidden md:block text-xs font-medium text-zinc-400 bg-zinc-50 px-3 py-1 rounded-full border border-zinc-100">
+                                        Module {item.id}
+                                    </span>
+                                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-zinc-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all">
+                                        <ChevronRight size={20} />
                                     </div>
                                 </div>
-                            </Link>
-                        ))}
-
-                        <div className="mt-8 pt-4">
-                            <a href="#" className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-900 hover:text-zinc-600 transition-colors border-b border-zinc-900 pb-1">
-                                View Full Syllabus <ChevronRight size={14} />
-                            </a>
-                        </div>
-                    </div>
-
-                    {/* RIGHT: The Large Preview Area */}
-                    <div className="lg:col-span-7 hidden lg:block sticky top-24">
-                        <div className="relative aspect-[16/9] w-full bg-zinc-100 rounded-sm overflow-hidden border border-zinc-200 shadow-sm">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={activeIndex}
-                                    initial={{ opacity: 0, scale: 1.05 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.4, ease: "easeOut" }}
-                                    className="absolute inset-0"
-                                >
-                                    <img
-                                        src={data.items[activeIndex].img}
-                                        alt={data.items[activeIndex].label}
-                                        className="w-full h-full object-cover grayscale"
-                                    />
-                                    {/* Elegant Overlay */}
-                                    <div className="absolute inset-0 bg-zinc-900/20 mix-blend-multiply"></div>
-                                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent"></div>
-
-                                    {/* Content inside Preview */}
-                                    <div className="absolute bottom-0 left-0 p-8 w-full">
-                                        <div className="flex items-center gap-3 mb-2 text-white/80">
-                                            {React.createElement(data.items[activeIndex].icon, { size: 20 })}
-                                            <span className="text-xs font-mono uppercase tracking-widest">Preview Module</span>
-                                        </div>
-                                        <p className="text-white text-lg font-light leading-relaxed max-w-lg">
-                                            {data.items[activeIndex].desc}
-                                        </p>
-                                        <div className="mt-6 flex items-center gap-4">
-                                            <div className="flex items-center gap-2 text-xs text-zinc-300 uppercase tracking-widest">
-                                                <Clock size={14} /> 45 Mins
-                                            </div>
-                                            <div className="h-4 w-[1px] bg-white/20"></div>
-                                            <div className="flex items-center gap-2 text-xs text-zinc-300 uppercase tracking-widest">
-                                                Certified
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            </AnimatePresence>
-                        </div>
-                    </div>
-
+                            </div>
+                        </Link>
+                    ))}
+                    
+                    {/* View All Footer in the Card */}
+                    <Link to="/education-center" className="block bg-zinc-50 p-4 text-center border-t border-zinc-100 hover:bg-zinc-100 transition-colors">
+                        <span className="text-sm font-medium text-blue-600">View Full Syllabus</span>
+                    </Link>
                 </div>
             </div>
         </section>
     )
 }
 
-// --- SECURITY SECTION (KEPT SAME) ---
-const BentoCard = ({ item, span }) => {
-    const Icon = item.icon || Info
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            whileHover={{ y: -5 }}
-            className={`group relative overflow-hidden bg-white border border-zinc-100 ${span || 'col-span-1'} min-h-[240px] md:min-h-[280px] flex flex-col justify-between p-8 cursor-pointer hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] transition-all duration-700 ease-out`}
-        >
-            <Link to={item.link} className="absolute inset-0 z-20" />
-            <div className="relative z-10 flex justify-between items-start">
-                <div className="w-10 h-10 border border-zinc-100 bg-[#fafafa]/80 backdrop-blur-sm flex items-center justify-center text-zinc-500 group-hover:text-zinc-900 group-hover:border-zinc-300 transition-all duration-500 rounded-sm">
-                    <Icon size={18} strokeWidth={1.5} />
-                </div>
-            </div>
-            <div className="relative z-10 mt-auto">
-                <h3 className="text-lg font-medium text-zinc-900 tracking-tight mb-1">{item.label}</h3>
-                <div className="h-[1px] w-8 bg-zinc-200 group-hover:w-full group-hover:bg-zinc-900 transition-all duration-700"></div>
-            </div>
-            <div className="absolute inset-0 z-0">
-                <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/40 to-white/10 group-hover:via-white/20 transition-all duration-700 z-10"></div>
-                <img src={item.img} alt={item.label} className="w-full h-full object-cover transform scale-100 group-hover:scale-110 grayscale group-hover:grayscale-0 transition-all duration-1000 ease-out" />
-            </div>
-        </motion.div>
-    )
-}
-
+// --- BENTO GRID NAVIGATION (SECURITY) ---
 const SecuritySection = () => {
     const data = SECTION_DATA.security;
     return (
-        <section className="py-32 bg-white relative border-t border-zinc-100" id="security">
-            <div className=" mx-auto px-6 md:px-16">
-                <div className="flex flex-col lg:flex-row items-start gap-12 lg:gap-20">
-                    <div className="lg:w-1/3 sticky top-32">
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="h-[1px] w-12 bg-zinc-300"></div>
-                            <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-[0.2em]">{data.subtitle}</h3>
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-light text-zinc-900 tracking-tighter mb-8 leading-[1.1]">
-                            {data.title}
-                        </h2>
-                        <p className="text-zinc-500 leading-relaxed font-light mb-10 text-lg">
-                            {data.description}
-                        </p>
-                        <Button className="!px-6 !py-3">
-                            Access Module <MoveRight size={16} />
-                        </Button>
-                    </div>
-                    <div className="lg:w-2/3 grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full auto-rows-[minmax(200px,auto)]">
-                        {data.items.map((item, idx) => (
-                            <BentoCard key={idx} item={item} span={item.span} />
-                        ))}
-                    </div>
+        <section className="py-24 bg-[#F5F5F7]" id="security">
+            <div className="max-w-6xl mx-auto px-6">
+                <SectionHeader title={data.title} subtitle={data.subtitle} linkTo="/security-dashboard" />
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 auto-rows-[200px]">
+                    {data.items.map((item, idx) => (
+                        <Link to={item.link} key={idx} className={`group relative block ${item.span || 'col-span-1'}`}>
+                            <motion.div
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                                className="w-full h-full bg-white rounded-3xl p-6 shadow-sm border border-zinc-200/60 overflow-hidden flex flex-col justify-between hover:shadow-lg hover:border-blue-200 transition-all duration-300"
+                            >
+                                {/* Top: Icon & Indicator */}
+                                <div className="flex justify-between items-start z-20">
+                                    <div className="w-10 h-10 rounded-full bg-zinc-50 flex items-center justify-center text-zinc-900 group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
+                                        <item.icon size={18} />
+                                    </div>
+                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/80 backdrop-blur rounded-full p-1.5 shadow-sm">
+                                        <ArrowUpRight size={14} className="text-blue-600" />
+                                    </div>
+                                </div>
+
+                                {/* Bottom: Label */}
+                                <div className="z-20">
+                                    <h3 className="text-lg font-bold text-zinc-900 leading-tight group-hover:text-blue-600 transition-colors">
+                                        {item.label}
+                                    </h3>
+                                    <p className="text-xs text-zinc-400 mt-1 font-medium">Access Service</p>
+                                </div>
+
+                                {/* Background Image: Very Subtle */}
+                                <div className="absolute inset-0 z-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500">
+                                    <img src={item.img} alt="" className="w-full h-full object-cover grayscale" />
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent z-10 pointer-events-none"></div>
+                            </motion.div>
+                        </Link>
+                    ))}
                 </div>
             </div>
         </section>
     )
 }
 
-// --- HERO & AI SECTION (KEPT SAME) ---
+// --- OPTIMIZED ELEGANT 3D ELEMENTS (UPSCALED) ---
+const ElegantShapes = () => {
+    // Optimization: Memoize materials to prevent recreation on re-renders
+    const lightBlueMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+        color: "#3b82f6",
+        roughness: 0.2,
+        metalness: 0.1,
+        clearcoat: 1,
+        clearcoatRoughness: 0.1,
+    }), [])
 
-const Hero = () => {
+    const glassMaterial = useMemo(() => new THREE.MeshPhysicalMaterial({
+        roughness: 0.15,
+        transmission: 0.95,
+        thickness: 2,
+        color: "#ffffff",
+        ior: 1.5,
+        transparent: true,
+        opacity: 0.8,
+    }), [])
+
+    const ceramicMaterial = useMemo(() => new THREE.MeshStandardMaterial({
+        color: "#f4f4f5",
+        roughness: 0.3,
+        metalness: 0.8,
+    }), [])
+
     return (
-        <section className='relative min-h-screen w-full flex flex-col items-center justify-center overflow-hidden pt-20'>
+        <>
+            <PerspectiveCamera makeDefault position={[0, 0, 14]} fov={50} />
+            
+            <ambientLight intensity={0.8} />
+            <spotLight position={[20, 20, 20]} angle={0.15} penumbra={1} intensity={1} />
+            <Environment preset="city" />
+
+            {/* Main Floating Liquid Sphere - UPSCALED & REPOSITIONED */}
+            <Float speed={2} rotationIntensity={1} floatIntensity={1.5} floatingRange={[-1, 1]}>
+                {/* Scale increased from 3.5 to 5.5, Position pushed further right */}
+                <mesh position={[8, -3, -5]} scale={5.5} material={lightBlueMaterial}>
+                    <sphereGeometry args={[1, 32, 32]} />
+                    <MeshDistortMaterial
+                        color="#3b82f6"
+                        envMapIntensity={1}
+                        clearcoat={1}
+                        clearcoatRoughness={0.1}
+                        metalness={0.1}
+                        roughness={0.2}
+                        distort={0.3} 
+                        speed={1.5}
+                    />
+                </mesh>
+            </Float>
+
+            {/* Glassy Torus - UPSCALED & REPOSITIONED */}
+            <Float speed={3} rotationIntensity={1.5} floatIntensity={1} floatingRange={[-0.5, 0.5]}>
+                {/* Scale increased, Position pushed further left */}
+                <Torus 
+                    position={[-9, 4, -10]} 
+                    args={[5, 1.5, 16, 48]} // Radius 3.5 -> 5, Tube 1 -> 1.5
+                    rotation={[1, 0.5, 0]} 
+                    material={glassMaterial}
+                />
+            </Float>
+
+            {/* Small Satellite Sphere - UPSCALED */}
+            <Float speed={1.5} rotationIntensity={2} floatIntensity={2}>
+                {/* Scale 1 -> 1.8 */}
+                <Sphere position={[-6, -6, -2]} args={[1.8, 24, 24]} material={ceramicMaterial}>
+                    {/* Used Memoized Material */}
+                </Sphere>
+            </Float>
+            
+            {/* Background Sphere - UPSCALED */}
+            <Float speed={1} rotationIntensity={0.5} floatIntensity={0.5}>
+                 {/* Scale 1.5 -> 2.5, pushed back */}
+                 <Sphere position={[10, 8, -15]} args={[2.5, 24, 24]}>
+                    <meshPhysicalMaterial
+                        color="#93c5fd"
+                        roughness={0}
+                        transmission={0.6}
+                        thickness={1}
+                    />
+                </Sphere>
+            </Float>
+
+            {/* Optimized Shadows - WIDENED */}
+            <ContactShadows 
+                position={[0, -9, 0]} 
+                opacity={0.3} 
+                scale={60} // Scale 40 -> 60 to cover larger area
+                blur={3} 
+                far={10} 
+                resolution={512} 
+                color="#1d4ed8" 
+                frames={1} 
+            />
+        </>
+    )
+}
+
+
+// --- HERO SECTION ---
+const Hero = () => {
+    const navigate = useNavigate()
+    return (
+        <section className='relative pt-32 pb-20 w-full overflow-hidden bg-[#F5F5F7]'>
+            {/* 3D Background - Optimized */}
             <div className="absolute inset-0 z-0 pointer-events-none">
-                <Canvas camera={{ position: [0, 0, 8], fov: 45 }}>
-                    <ambientLight intensity={1} />
-                    <spotLight position={[10, 10, 10]} angle={0.5} penumbra={1} intensity={1} color="#ffffff" />
-                    <LandingOrb />
-                    <ContactShadows position={[0, -3, 0]} opacity={0.2} scale={10} blur={3} far={4} color="#000000" />
-                    <Environment preset="dawn" />
+                <Canvas 
+                    dpr={[1, 1.5]} 
+                    gl={{ antialias: true, stencil: false, powerPreference: "high-performance" }}
+                    camera={{ position: [0, 0, 14], fov: 50 }} // Camera slightly closer
+                >
+                     <ElegantShapes />
                 </Canvas>
+                
+                {/* Gradient Overlays */}
+                <div className="absolute inset-0 bg-gradient-to-b from-[#F5F5F7]/20 via-transparent to-[#F5F5F7] z-10"></div>
+                <div className="absolute inset-0 bg-white/30 backdrop-blur-[1px] z-0"></div>
             </div>
-            <div className='relative z-10 flex flex-col items-center text-center max-w-4xl px-6'>
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, ease: "easeOut" }}>
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-zinc-200 bg-white/50 backdrop-blur-sm mb-8">
-                        <Sparkles size={12} className="text-amber-400" />
-                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Tasikmalaya Intelligence System</span>
+
+            <div className='relative z-10 max-w-4xl mx-auto px-6 text-center'>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 backdrop-blur-md border border-zinc-200 shadow-sm mb-6">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span className="text-xs font-semibold text-zinc-600 uppercase tracking-wide">System Online</span>
                     </div>
-                    <h1 className='text-6xl md:text-9xl font-light text-zinc-900 tracking-tighter leading-[0.9] mb-8'>
-                        Tasikmalaya<span className="font-bold">Smart</span><br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 via-zinc-500 to-zinc-900">City.</span>
+                    
+                    <h1 className='text-5xl md:text-7xl font-bold text-zinc-900 tracking-tight mb-6 leading-[1.1]'>
+                        Tasikmalaya <br />
+                        <span className="text-zinc-400 font-medium">Smart City.</span>
                     </h1>
-                    <p className='text-lg md:text-xl text-zinc-500 mb-12 max-w-xl mx-auto font-light leading-relaxed'>
-                        The nervous system of Tasikmalaya. Real-time data, integrated services, and AI assistance in one porcelain interface.
+                    
+                    <p className='text-lg text-zinc-500 mb-10 max-w-2xl mx-auto leading-relaxed'>
+                        Access all municipal services, real-time data monitoring, and educational resources from one central dashboard.
                     </p>
-                    <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
-                        <Button primary>Initialize System</Button>
-                        <a href="#services" className="text-zinc-500 text-xs uppercase tracking-widest hover:text-zinc-900 transition-colors flex items-center gap-2 group">
-                            Explore Modules <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                        </a>
+
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <button onClick={() => navigate('/virtual-assistant')} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-full text-sm font-semibold shadow-lg shadow-blue-600/20 transition-all hover:scale-105 flex items-center gap-2">
+                            Initialize AI <ArrowRight size={16} />
+                        </button>
+                        <button onClick={() => navigate('/traffic')} className="bg-white/80 backdrop-blur-sm hover:bg-white text-zinc-900 border border-zinc-200 px-8 py-4 rounded-full text-sm font-semibold transition-all flex items-center gap-2 shadow-sm">
+                            View CCTV
+                        </button>
                     </div>
                 </motion.div>
             </div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5, duration: 1 }} className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-30">
-                <div className="w-[1px] h-12 bg-gradient-to-b from-zinc-900 to-transparent"></div>
-            </motion.div>
         </section>
     )
 }
 
+// --- AI SECTION ---
 const AISection = () => {
     const navigate = useNavigate()
+    
     return (
-        <section className="py-32 bg-[#fafafa] relative overflow-hidden border-y border-zinc-100">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-amber-100/30 rounded-full blur-[120px] mix-blend-multiply pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-cyan-100/30 rounded-full blur-[120px] mix-blend-multiply pointer-events-none"></div>
-            <div className=" mx-auto px-6 relative z-10">
-                <div className="flex flex-col items-center text-center max-w-4xl mx-auto">
-                    <motion.div initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ duration: 0.8 }} className="w-20 h-20 bg-white border border-zinc-100 shadow-xl flex items-center justify-center mb-10 relative overflow-hidden rounded-2xl">
-                        <div className="absolute inset-0 bg-gradient-to-tr from-amber-100 via-cyan-100 to-magenta-100 opacity-50"></div>
-                        <Sparkles size={32} className="text-zinc-900 relative z-10" strokeWidth={1} />
-                    </motion.div>
-                    <h2 className="text-5xl md:text-7xl font-light text-zinc-900 tracking-tighter mb-8">
-                        Talk to the <span className="font-bold">City.</span>
-                    </h2>
-                    <p className="text-xl text-zinc-500 mb-12 font-light max-w-2xl leading-relaxed">
-                        No more searching through menus. Just ask Tasik AI about traffic, documents, or emergencies. It's like having a city official in your pocket.
-                    </p>
-                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => navigate('virtual-assistant')} className="group relative px-10 py-5 bg-zinc-900 text-white overflow-hidden shadow-2xl rounded-sm">
-                        <div className="absolute inset-0 bg-gradient-to-r from-amber-500 via-cyan-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl"></div>
-                        <span className="relative z-10 flex items-center gap-4 text-xs font-bold uppercase tracking-[0.2em]">
-                            Launch Neural Interface <ArrowRight size={16} />
-                        </span>
-                    </motion.button>
+        <section className="py-24 bg-white border-t border-zinc-100">
+            <div className="max-w-4xl mx-auto px-6 text-center">
+                <div className="bg-gradient-to-b from-zinc-50 to-white border border-zinc-100 rounded-[3rem] p-12 shadow-sm relative overflow-hidden">
+                     {/* Decorative blur */}
+                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-blue-100 blur-[80px] opacity-50 pointer-events-none"></div>
+
+                    <div className="relative z-10">
+                        <div className="w-16 h-16 bg-white rounded-2xl shadow-md border border-zinc-100 flex items-center justify-center mx-auto mb-6">
+                            <Sparkles size={24} className="text-blue-600" />
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 tracking-tight mb-4">
+                            Need Assistance?
+                        </h2>
+                        <p className="text-zinc-500 mb-8 max-w-lg mx-auto">
+                            Use the virtual assistant to quickly navigate services or ask questions about city protocols.
+                        </p>
+                        
+                        <button 
+                            onClick={() => navigate('virtual-assistant')}
+                            className="bg-zinc-900 text-white px-8 py-3 rounded-full font-medium text-sm shadow-xl shadow-zinc-900/10 hover:bg-zinc-800 transition-all hover:scale-105 flex items-center gap-2 mx-auto"
+                        >
+                           <div className="w-2 h-2 rounded-full bg-blue-400"></div> Launch Assistant
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
     )
 }
 
+// --- FOOTER ---
 const Footer = () => {
     return (
-        <footer className='bg-[#fafafa] pt-24 pb-12 border-t border-zinc-200 text-zinc-900'>
-            <div className=" mx-auto px-6">
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-12 mb-20">
-                    <div className="col-span-2 md:col-span-2">
-                        <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-6">Tasik.AI</h2>
-                        <p className="text-xs text-zinc-500 leading-relaxed max-w-xs font-light">
-                            A digital infrastructure project by Tasikmalaya City Government. Integrating data for a smarter tomorrow.
+        <footer className='bg-white pt-20 pb-10 text-zinc-900 border-t border-zinc-200'>
+            <div className="max-w-6xl mx-auto px-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-16">
+                    <div className="col-span-2 md:col-span-1">
+                        <div className="flex items-center gap-2 mb-4">
+                             <div className="w-6 h-6 flex items-center justify-center">
+                                <img src={LogoImg} alt="Logo" className="w-4 h-4" />
+                            </div>
+                            <span className="font-bold text-sm">Kota Tasikmalaya</span>
+                        </div>
+                        <p className="text-xs text-zinc-500 leading-relaxed">
+                            Official Smart City Dashboard. <br/>Integrated municipal services.
                         </p>
                     </div>
                     {[
-                        { title: 'Platform', links: ['Overview', 'Intelligence', 'Modules', 'Roadmap'] },
-                        { title: 'Services', links: ['Public Safety', 'Education', 'Health', 'Transport'] },
-                        { title: 'Support', links: ['Documentation', 'API Status', 'Contact', 'Legal'] },
-                        { title: 'Social', links: ['Instagram', 'Twitter', 'GitHub', 'LinkedIn'] },
+                        { title: 'Navigation', links: ['Home', 'Dashboard', 'Services', 'Map'] },
+                        { title: 'Resources', links: ['Documentation', 'API', 'Support', 'Status'] },
+                        { title: 'Legal', links: ['Privacy', 'Terms', 'Cookie Policy', 'Licenses'] },
                     ].map((col, idx) => (
-                        <div key={idx} className="flex flex-col gap-4">
-                            <h4 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">{col.title}</h4>
+                        <div key={idx} className="flex flex-col gap-3">
+                            <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-wider">{col.title}</h4>
                             {col.links.map(link => (
-                                <a key={link} href="#" className="text-xs font-medium text-zinc-600 hover:text-zinc-900 transition-colors">{link}</a>
+                                <a key={link} href="#" className="text-sm font-medium text-zinc-600 hover:text-blue-600 transition-colors">{link}</a>
                             ))}
                         </div>
                     ))}
                 </div>
-                <div className="pt-8 border-t border-zinc-200 flex flex-col md:flex-row justify-between items-center text-[10px] text-zinc-400 uppercase tracking-widest gap-6">
-                    <p>© 2026 Tasikmalaya Smart City. All systems nominal.</p>
-                    <div className="flex gap-8">
-                        <a href="#" className="hover:text-zinc-900">Privacy</a>
-                        <a href="#" className="hover:text-zinc-900">Terms</a>
-                        <a href="#" className="hover:text-zinc-900">Sitemap</a>
-                    </div>
+                <div className="pt-8 border-t border-zinc-100 flex justify-between items-center text-xs text-zinc-400">
+                    <p>© 2026 Tasikmalaya Smart City.</p>
+                    <p>v2.4.0 (Stable)</p>
                 </div>
             </div>
         </footer>
@@ -626,23 +460,17 @@ const Footer = () => {
 }
 
 // --- MAIN LAYOUT ---
-
 const LandingPage = () => {
     return (
-        <div className="bg-[#fafafa] min-h-screen text-zinc-900 font-sans antialiased selection:bg-zinc-200 selection:text-black">
-            {/* Global Noise Texture Overlay */}
-            <div className="fixed inset-0 opacity-[0.03] pointer-events-none mix-blend-multiply z-50" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
-
+        <div className="bg-[#F5F5F7] min-h-screen text-zinc-900 font-sans antialiased selection:bg-blue-100 selection:text-blue-900">
             <Navbar />
-
             <main>
                 <Hero />
                 <EnvironmentSection />
                 <EducationSection />
-                <AISection />
                 <SecuritySection />
+                <AISection />
             </main>
-
             <Footer />
         </div>
     )

@@ -380,75 +380,7 @@ const ChatInterface = ({ onStateChange }) => {
     )
 }
 
-// ==========================================
-// 3. MAIN EXPORTS
-// ==========================================
-
-export const MainAi = () => {
-    return (
-        <section className='min-h-screen flex flex-col items-center justify-center w-full bg-[#fafafa] relative overflow-hidden font-sans text-zinc-900'>
-            
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-multiply" style={{ backgroundImage: 'url("https://grainy-gradients.vercel.app/noise.svg")' }}></div>
-
-            <div className="relative z-10 flex flex-col items-center max-w-4xl px-6 text-center">
-                
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 1.2, ease: "circOut" }}
-                    className="mb-12"
-                >
-                    <div className="w-20 h-20 border border-zinc-300 rotate-45 flex items-center justify-center">
-                        <div className="w-12 h-12 border border-zinc-400 rotate-45 flex items-center justify-center bg-white shadow-xl">
-                            <div className="w-2 h-2 bg-zinc-900 rounded-full"></div>
-                        </div>
-                    </div>
-                </motion.div>
-
-                <motion.h1
-                    initial={{ y: 30, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.8 }}
-                    className='text-6xl md:text-8xl font-light tracking-tighter mb-8'
-                >
-                    Tasikmalaya<br/>
-                    <span className="font-bold">Intelligence.</span>
-                </motion.h1>
-                
-                <motion.p 
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2, duration: 0.8 }}
-                    className='text-lg text-zinc-500 max-w-lg mx-auto mb-16 font-light leading-relaxed'
-                >
-                    Sistem kecerdasan kota terintegrasi. Akses data publik, layanan, dan wawasan dalam antarmuka yang jernih dan elegan.
-                </motion.p>
-                
-                <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                >
-                    <Link to='/virtualAst'>
-                        <button className='group relative px-10 py-4 border border-zinc-200 bg-white hover:border-zinc-900 hover:bg-zinc-900 hover:text-white transition-all duration-500 ease-out uppercase text-xs tracking-[0.2em] font-medium shadow-sm'>
-                            <span className="flex items-center gap-4">
-                                Initialize System
-                                <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform"/>
-                            </span>
-                        </button>
-                    </Link>
-                </motion.div>
-            </div>
-            
-            <div className="absolute bottom-10 w-full flex justify-between px-10 opacity-40 text-zinc-500">
-               <span className="text-[10px] font-mono tracking-widest uppercase">SYS.STATUS: ONLINE</span>
-               <span className="text-[10px] font-mono tracking-widest uppercase">V 2.6.0 (HOLO)</span>
-            </div>
-        </section>
-    )
-}
-
-export const VirtualAssistantPage = () => {
+export default function VirtualAssistantPage() {
     const [orbState, setOrbState] = useState("idle");
 
     return (
@@ -458,5 +390,3 @@ export const VirtualAssistantPage = () => {
         </div>
     )
 }
-
-export default MainAi;
