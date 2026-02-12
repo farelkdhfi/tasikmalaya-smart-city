@@ -40,29 +40,19 @@ const THREAT_TYPES = [
 ];
 const SOURCES = ["192.168.1.105", "Ext: 14.23.110.5", "User: Admin_01", "Gateway_Firewall"];
 
-// --- INITIAL DATA ---
-const INITIAL_TREND = Array.from({ length: 15 }, (_, i) => ({ day: i, val: getRandom(10, 40) }));
-
 const INCIDENT_TYPES = [
   { name: 'Phishing', count: 450 }, { name: 'Malware', count: 320 },
   { name: 'Data Leak', count: 150 }, { name: 'Id. Theft', count: 80 }
 ];
 
-const THREAT_SOURCES = [
-  { name: 'Email', value: 45, color: '#6366f1' },
-  { name: 'Web', value: 30, color: '#818cf8' },
-  { name: 'Network', value: 15, color: '#a5b4fc' },
-  { name: 'Ext. Media', value: 10, color: '#c7d2fe' }
-];
+// --- INITIAL DATA ---
+const INITIAL_TREND = Array.from({ length: 20 }, (_, i) => ({ day: i, val: getRandom(10, 30) }));
 
 // --- SUB-COMPONENTS ---
 
 const TrendBadge = ({ value, inverse = false }) => {
     const isPositive = value > 0;
     // Cyber logic: Positive trend in threats is BAD (Red), Negative is GOOD (Green)
-    // If inverse=false (default): Green is Positive. 
-    // We want: High Threats = Red. So if value > 0, Red.
-    
     let colorClass = 'bg-zinc-100 text-zinc-600';
     if (value !== 0) {
         if (inverse) {
@@ -100,7 +90,7 @@ const MetricCard = ({ item }) => (
                 <h3 className="text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">
                     {item.value}
                 </h3>
-                <TrendBadge value={item.trend} inverse={item.label.includes('Incidents') || item.label.includes('Risk')} />
+                <TrendBadge value={item.trend} inverse={item.label.includes('Incidents') || item.label.includes('Risk') || item.label.includes('Attempts')} />
             </div>
             <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">{item.label}</p>
         </div>
@@ -115,7 +105,7 @@ const MetricCard = ({ item }) => (
 export default function CyberSecurity() {
   // STATE
   const [kpiData, setKpiData] = useState([
-    { id: 1, label: 'Phishing Blocked', sub: 'Last 24h', value: 1240, trend: -5, icon: FileWarning },
+    { id: 1, label: 'Phishing Blocked', sub: 'Last 24h', value: 1240, trend: 5, icon: FileWarning },
     { id: 2, label: 'Active Incidents', sub: 'Requiring Action', value: 3, trend: 2, icon: AlertOctagon },
     { id: 3, label: 'Account Health', sub: 'IAM Status', value: 98, trend: 1.2, icon: Lock },
     { id: 4, label: 'Network Risk', sub: 'Vulnerability Index', value: 'Low', trend: 0, icon: Wifi },
@@ -128,21 +118,23 @@ export default function CyberSecurity() {
   ]);
 
   // NEW FEATURE STATES
-  const [terminalLogs, setTerminalLogs] = useState(["> System init...", "> Monitoring active."]); // Feature 1
-  const [serverStatus, setServerStatus] = useState([ // Feature 2
+  const [terminalLogs, setTerminalLogs] = useState(["> System init...", "> Monitoring active."]); 
+  const [serverStatus, setServerStatus] = useState([
       { name: "Firewall", status: "ok" }, { name: "Auth DB", status: "ok" }, { name: "Web Gateway", status: "warn" }, { name: "Backup", status: "ok" }
   ]);
-  const [threatLevel, setThreatLevel] = useState("Level 3"); // Feature 3
-  const [scanning, setScanning] = useState(true); // Feature 4 (Radar animation state)
-  const [actionLoading, setActionLoading] = useState(null); // Feature 5
+  const [threatLevel, setThreatLevel] = useState("DEFCON 3"); 
+  const [scanning, setScanning] = useState(true); 
+  const [actionLoading, setActionLoading] = useState(null); 
 
   // SIMULATION ENGINE
   useEffect(() => {
     const interval = setInterval(() => {
         // 1. Update Charts (Scrolling Effect)
         setTrendData(prev => {
-            const newVal = getRandom(5, 50);
-            return [...prev.slice(1), { day: prev[prev.length-1].day + 1, val: newVal }];
+            const newVal = getRandom(10, 60);
+            // Keep array length constant for scrolling effect
+            const newArr = [...prev.slice(1), { day: prev[prev.length-1].day + 1, val: newVal }];
+            return newArr;
         });
 
         // 2. Update KPIs
@@ -165,28 +157,36 @@ export default function CyberSecurity() {
                 time: "Just now",
                 severity: Math.random() > 0.7 ? "High" : "Medium"
             };
-            setIncidents(prev => [newInc, ...prev].slice(0, 5));
+            setIncidents(prev => [newInc, ...prev].slice(0, 6));
 
             // Add to Terminal
             setTerminalLogs(prev => [`> [WARN] ${newThreat} detected from ${newSource}`, ...prev].slice(0, 8));
         }
 
-        // 4. Update Threat Level based on activity
-        setThreatLevel(trendData[trendData.length-1].val > 40 ? "DEFCON 2" : "DEFCON 3");
+        // 4. Update Threat Level based on latest traffic spike
+        setThreatLevel(trendData[trendData.length-1].val > 50 ? "DEFCON 2" : "DEFCON 3");
 
-    }, 2000);
+    }, 1500); // Fast update for cyber feel
 
     return () => clearInterval(interval);
   }, [trendData]);
 
-  // Action Handler (Feature 5)
+  // Action Handler
   const handleQuickAction = (action) => {
+      if(actionLoading) return;
       setActionLoading(action);
       setTerminalLogs(prev => [`> Initiating ${action}...`, ...prev]);
+      
       setTimeout(() => {
           setActionLoading(null);
           setTerminalLogs(prev => [`> ${action} Completed successfully.`, ...prev]);
-      }, 1500);
+          // Simulation effect: reduce incidents
+          if(action === 'Lockdown Protocol') {
+             setIncidents([]);
+             setTrendData(prev => prev.map(d => ({...d, val: 5}))); // Flatline traffic
+             setThreatLevel("DEFCON 1");
+          }
+      }, 2000);
   };
 
   return (
@@ -204,7 +204,7 @@ export default function CyberSecurity() {
                 </div>
                 
                 {/* FEATURE 3: THREAT LEVEL INDICATOR */}
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm ${threatLevel === 'DEFCON 2' ? 'bg-rose-100 border-rose-200 text-rose-700' : 'bg-emerald-100 border-emerald-200 text-emerald-700'}`}>
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors duration-500 ${threatLevel === 'DEFCON 2' ? 'bg-rose-100 border-rose-200 text-rose-700' : threatLevel === 'DEFCON 1' ? 'bg-red-600 border-red-700 text-white animate-pulse' : 'bg-emerald-100 border-emerald-200 text-emerald-700'}`}>
                     <Activity size={14} />
                     <span className="text-xs font-bold uppercase">{threatLevel}</span>
                 </div>
@@ -237,7 +237,7 @@ export default function CyberSecurity() {
                             <p className="text-xs text-zinc-500 uppercase tracking-wide">Inbound Packet Analysis</p>
                         </div>
                         {/* FEATURE 4: RADAR ANIMATION */}
-                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full text-indigo-700 text-xs font-bold relative overflow-hidden">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full text-indigo-700 text-xs font-bold relative overflow-hidden border border-indigo-100">
                             <Radar size={14} className={scanning ? "animate-spin" : ""} /> 
                             <span>Scanning...</span>
                         </div>
@@ -259,7 +259,7 @@ export default function CyberSecurity() {
                                     itemStyle={{ color: '#4f46e5', fontWeight: 'bold' }}
                                 />
                                 <Area 
-                                    isAnimationActive={false}
+                                    isAnimationActive={false} // Crucial for smooth scrolling
                                     type="monotone" 
                                     dataKey="val" 
                                     stroke="#6366f1" 
@@ -312,7 +312,9 @@ export default function CyberSecurity() {
                             ))}
                         </div>
                         <div className="mt-4 pt-4 border-t border-zinc-100 flex justify-center">
-                            <span className="text-[10px] text-zinc-400 font-mono uppercase">All Systems Operational</span>
+                            <span className="text-[10px] text-zinc-400 font-mono uppercase flex items-center gap-1">
+                                <CheckCircle2 size={10} className="text-emerald-500"/> All Systems Operational
+                            </span>
                         </div>
                     </div>
 
@@ -329,19 +331,24 @@ export default function CyberSecurity() {
                         <span className="font-bold">SIEM_CONSOLE_V4</span>
                     </div>
                     <div className="space-y-1 h-[150px] overflow-hidden relative">
-                        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 to-transparent pointer-events-none"></div>
-                        <AnimatePresence>
-                        {terminalLogs.map((log, i) => (
-                            <motion.div 
-                                key={i}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1 - (i * 0.1), x: 0 }}
-                                className="truncate"
-                            >
-                                {log}
-                            </motion.div>
-                        ))}
-                        </AnimatePresence>
+                        {/* Gradient Fade for visual effect */}
+                        <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-zinc-950 to-transparent pointer-events-none z-10"></div>
+                        <div className="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-zinc-950 to-transparent pointer-events-none z-10"></div>
+                        
+                        <div className="flex flex-col justify-end h-full pb-2">
+                            <AnimatePresence initial={false}>
+                            {terminalLogs.map((log, i) => (
+                                <motion.div 
+                                    key={i} // Using index as key for simple rolling logs
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1 - (i * 0.15), x: 0 }}
+                                    className="truncate py-0.5"
+                                >
+                                    {log}
+                                </motion.div>
+                            ))}
+                            </AnimatePresence>
+                        </div>
                     </div>
                 </div>
 
@@ -351,7 +358,8 @@ export default function CyberSecurity() {
                     <div className="space-y-3">
                         <button 
                             onClick={() => handleQuickAction('Lockdown Protocol')}
-                            className="w-full py-3 px-4 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl flex items-center justify-between transition-colors group"
+                            disabled={actionLoading}
+                            className={`w-full py-3 px-4 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl flex items-center justify-between transition-colors group ${actionLoading && 'opacity-50 cursor-not-allowed'}`}
                         >
                             <span className="text-xs font-bold uppercase flex items-center gap-2">
                                 <Lock size={14} /> Global Lockdown
@@ -360,7 +368,8 @@ export default function CyberSecurity() {
                         </button>
                         <button 
                             onClick={() => handleQuickAction('Flush DNS Cache')}
-                            className="w-full py-3 px-4 bg-zinc-50 text-zinc-700 hover:bg-zinc-100 rounded-xl flex items-center justify-between transition-colors group"
+                            disabled={actionLoading}
+                            className={`w-full py-3 px-4 bg-zinc-50 text-zinc-700 hover:bg-zinc-100 rounded-xl flex items-center justify-between transition-colors group ${actionLoading && 'opacity-50 cursor-not-allowed'}`}
                         >
                             <span className="text-xs font-bold uppercase flex items-center gap-2">
                                 <Zap size={14} /> Flush DNS
@@ -377,17 +386,18 @@ export default function CyberSecurity() {
                         <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div>
                     </div>
                     
-                    <div className="space-y-4">
-                        <AnimatePresence>
+                    <div className="space-y-4 max-h-[400px] overflow-hidden">
+                        <AnimatePresence initial={false}>
                         {incidents.map((inc) => (
                             <motion.div 
                                 layout
                                 key={inc.id} 
-                                initial={{ opacity: 0, y: -20 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                                animate={{ opacity: 1, scale: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
                                 className="flex gap-4 items-start p-2 hover:bg-zinc-50 rounded-2xl transition-colors cursor-pointer group"
                             >
-                                <div className={`p-2.5 rounded-xl mt-0.5 shrink-0 ${
+                                <div className={`p-2.5 rounded-xl mt-0.5 shrink-0 transition-colors ${
                                     inc.severity === 'High' ? 'bg-rose-50 text-rose-500' : 'bg-orange-50 text-orange-500'
                                 }`}>
                                     {inc.severity === 'High' ? <AlertTriangle size={16} /> : <Shield size={16} />}
@@ -395,7 +405,7 @@ export default function CyberSecurity() {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start">
                                         <p className="text-sm font-bold text-zinc-900 truncate">{inc.type}</p>
-                                        <span className="text-[10px] text-zinc-400 whitespace-nowrap">{inc.time}</span>
+                                        <span className="text-[10px] text-zinc-400 whitespace-nowrap ml-2">{inc.time}</span>
                                     </div>
                                     <p className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-1">
                                         <Server size={10} /> {inc.source}

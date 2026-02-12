@@ -1,13 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-#root {
-  width: 100vw;
-  height: 100vh;
+::-webkit-scrollbar {
+  width: 4px;
+  background-color: black;
+  height: 4px;
 }
 
-body {
-  overflow-x: hidden;
-  width: 100dvw;
+::-webkit-scrollbar-thumb {
+  background-color: gray;
+  border-radius: 10px;
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   AlertTriangle, 
@@ -34,8 +34,8 @@ import {
 
 import PageLayout from '../../components/PageLayout'; 
 
-// --- MOCK DATA DATASETS ---
-const RISK_DATASETS = {
+// --- INITIAL MOCK DATA ---
+const INITIAL_RISK_DATA = {
   '12H': [
     { time: '00:00', val: 20 }, { time: '02:00', val: 25 }, { time: '04:00', val: 35 },
     { time: '06:00', val: 45 }, { time: '08:00', val: 55 }, { time: '10:00', val: 60 },
@@ -53,10 +53,10 @@ const RISK_DATASETS = {
 };
 
 const KPI_DATA = [
-  { id: 'alerts', label: 'Active Alerts', sub: 'Regional Warnings', value: '12', trend: +20, icon: Siren, color: 'red' },
-  { id: 'flood', label: 'Flood Risk', sub: 'Hydro Index', value: 'High', trend: +5, icon: Waves, color: 'blue' },
-  { id: 'seismic', label: 'Seismic Activity', sub: 'Richter Scale', value: '2.4M', trend: -0.2, icon: Activity, color: 'orange' },
-  { id: 'shelter', label: 'Shelter Cap.', sub: 'Occupancy Rate', value: '45%', trend: -12, icon: Tent, color: 'emerald' },
+  { id: 'alerts', label: 'Active Alerts', sub: 'Regional Warnings', value: '12', trend: +20, icon: Siren, color: 'red', filterKey: 'Warning' },
+  { id: 'flood', label: 'Flood Risk', sub: 'Hydro Index', value: 'High', trend: +5, icon: Waves, color: 'blue', filterKey: 'Flood' },
+  { id: 'seismic', label: 'Seismic Activity', sub: 'Richter Scale', value: '2.4M', trend: -0.2, icon: Activity, color: 'orange', filterKey: 'Landslide' },
+  { id: 'shelter', label: 'Shelter Cap.', sub: 'Occupancy Rate', value: '45%', trend: -12, icon: Tent, color: 'emerald', filterKey: 'Supply' },
 ];
 
 const ALERTS_DATA = [
@@ -68,10 +68,10 @@ const ALERTS_DATA = [
 ];
 
 const RESOURCE_DATA = [
-  { type: 'Medics', count: 45 },
-  { type: 'Rescue', count: 80 },
-  { type: 'Logistics', count: 30 },
-  { type: 'Vols', count: 120 }
+  { type: 'Medics', count: 45, max: 100 },
+  { type: 'Rescue', count: 80, max: 150 },
+  { type: 'Logistics', count: 30, max: 80 },
+  { type: 'Scout', count: 120, max: 200 } // Changed 'Vols' to 'Scout' to match Modal
 ];
 
 // --- SUB-COMPONENTS ---
@@ -137,9 +137,21 @@ const MetricCard = ({ item, isActive, onClick }) => (
     </motion.div>
 );
 
-// --- MODAL: DEPLOY RESOURCES (NEW FEATURE 3) ---
+// --- MODAL: DEPLOY RESOURCES ---
 const DeployModal = ({ isOpen, onClose, onDeploy }) => {
+    // Internal state for the form logic
+    const [selectedType, setSelectedType] = useState('Rescue');
+    const [selectedSector, setSelectedSector] = useState('Sector A');
+
+    useEffect(() => {
+        if (isOpen) {
+            // Reset to defaults on open
+            setSelectedType('Rescue');
+        }
+    }, [isOpen]);
+
     if (!isOpen) return null;
+    
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm p-4">
             <motion.div 
@@ -159,8 +171,16 @@ const DeployModal = ({ isOpen, onClose, onDeploy }) => {
                     <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase ml-1 block mb-2">Unit Type</label>
                         <div className="grid grid-cols-2 gap-2">
-                            {['Medical', 'Rescue', 'Logistics', 'Scout'].map(type => (
-                                <button key={type} className="py-3 px-4 rounded-xl border border-zinc-200 text-sm font-bold text-zinc-600 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700 transition-colors text-left">
+                            {['Medics', 'Rescue', 'Logistics', 'Scout'].map(type => (
+                                <button 
+                                    key={type} 
+                                    onClick={() => setSelectedType(type)}
+                                    className={`py-3 px-4 rounded-xl border text-sm font-bold text-left transition-all duration-200 ${
+                                        selectedType === type 
+                                        ? 'bg-orange-50 border-orange-500 text-orange-700 ring-1 ring-orange-500' 
+                                        : 'border-zinc-200 text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300'
+                                    }`}
+                                >
                                     {type} Team
                                 </button>
                             ))}
@@ -168,17 +188,24 @@ const DeployModal = ({ isOpen, onClose, onDeploy }) => {
                     </div>
                     <div>
                         <label className="text-xs font-bold text-zinc-500 uppercase ml-1 block mb-2">Target Sector</label>
-                        <select className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                            <option>Sector A - Cipedes (Critical)</option>
-                            <option>Sector B - Kawalu</option>
-                            <option>Sector C - Indihiang</option>
+                        <select 
+                            value={selectedSector}
+                            onChange={(e) => setSelectedSector(e.target.value)}
+                            className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-sm font-medium text-zinc-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                        >
+                            <option value="Sector A">Sector A - Cipedes (Critical)</option>
+                            <option value="Sector B">Sector B - Kawalu</option>
+                            <option value="Sector C">Sector C - Indihiang</option>
                         </select>
                     </div>
                 </div>
 
                 <div className="mt-8 flex gap-3">
                     <button onClick={onClose} className="flex-1 py-3 rounded-xl font-bold text-zinc-500 hover:bg-zinc-50 transition-colors">Cancel</button>
-                    <button onClick={() => { onDeploy(); onClose(); }} className="flex-[2] py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2">
+                    <button 
+                        onClick={() => { onDeploy(selectedType, selectedSector); onClose(); }} 
+                        className="flex-[2] py-3 rounded-xl font-bold text-white bg-orange-600 hover:bg-orange-700 shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                    >
                         <Send size={16} /> Deploy Now
                     </button>
                 </div>
@@ -192,18 +219,40 @@ const DeployModal = ({ isOpen, onClose, onDeploy }) => {
 export default function DisasterRelief() {
   // STATE
   const [activeKpi, setActiveKpi] = useState(null);
-  const [timeRange, setTimeRange] = useState('24H'); // NEW FEATURE 2: Time Selector
-  const [mapLayer, setMapLayer] = useState('all'); // NEW FEATURE 1: Map Layers
-  const [alertQuery, setAlertQuery] = useState(''); // NEW FEATURE 4: Search
-  const [alertLevel, setAlertLevel] = useState('Orange'); // NEW FEATURE 5: Level Toggler
-  const [isDeployOpen, setIsDeployOpen] = useState(false); // NEW FEATURE 3: Modal
+  const [timeRange, setTimeRange] = useState('24H');
+  const [mapLayer, setMapLayer] = useState('all');
+  const [alertQuery, setAlertQuery] = useState('');
+  const [alertLevel, setAlertLevel] = useState('Orange');
+  const [isDeployOpen, setIsDeployOpen] = useState(false);
+  
+  // Data States (For Simulation)
   const [resourceData, setResourceData] = useState(RESOURCE_DATA);
+  const [riskData, setRiskData] = useState(INITIAL_RISK_DATA);
+  const [isLiveMode, setIsLiveMode] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // Forces re-render on "refresh"
 
-  // Filter Data Logic
-  const filteredAlerts = ALERTS_DATA.filter(a => 
-    a.type.toLowerCase().includes(alertQuery.toLowerCase()) || 
-    a.location.toLowerCase().includes(alertQuery.toLowerCase())
-  );
+  // LOGIC: Filter Alerts based on Search AND KPI Selection
+  const filteredAlerts = useMemo(() => {
+    let result = ALERTS_DATA;
+    
+    // 1. Filter by Search Query
+    if (alertQuery) {
+        result = result.filter(a => 
+            a.type.toLowerCase().includes(alertQuery.toLowerCase()) || 
+            a.location.toLowerCase().includes(alertQuery.toLowerCase())
+        );
+    }
+
+    // 2. Filter by Active KPI Context
+    if (activeKpi) {
+        const kpi = KPI_DATA.find(k => k.id === activeKpi);
+        if (kpi) {
+            result = result.filter(a => a.type.includes(kpi.filterKey));
+        }
+    }
+
+    return result;
+  }, [alertQuery, activeKpi]);
 
   const toggleAlertLevel = () => {
     const levels = ['Yellow', 'Orange', 'Red'];
@@ -211,11 +260,71 @@ export default function DisasterRelief() {
     setAlertLevel(next);
   };
 
-  const handleDeploy = () => {
-     // Simulate resource update
-     const newData = [...resourceData];
-     newData[1].count += 1; // Add to Rescue
-     setResourceData(newData);
+  // LOGIC: Handle Deployment from Modal
+  const handleDeploy = (type, sector) => {
+     setResourceData(prev => prev.map(item => {
+        if (item.type === type) {
+            // Increase count but cap at max for safety, though UI handles it
+            const newCount = Math.min(item.count + 5, item.max); 
+            return { ...item, count: newCount };
+        }
+        return item;
+     }));
+     
+     // Optional: Simulate risk reduction if enough resources deployed
+     if (type === 'Rescue' || type === 'Medics') {
+         setTimeout(() => {
+             setRiskData(prev => ({
+                 ...prev,
+                 [timeRange]: prev[timeRange].map(d => ({...d, val: Math.max(10, d.val - 2)}))
+             }));
+         }, 500);
+     }
+  };
+
+  // LOGIC: Manual Refresh Simulation
+  const handleRefresh = () => {
+      setRefreshKey(prev => prev + 1);
+      // Simulate fetching data
+      const randomTrend = Math.floor(Math.random() * 10) - 5;
+      setResourceData(prev => prev.map(r => ({...r, count: Math.max(0, r.count + (Math.random() > 0.5 ? 1 : -1))})));
+  };
+
+  // LOGIC: Map Marker Click
+  const handleMarkerClick = (locationName) => {
+      setAlertQuery(locationName); // Filter alerts by this location
+      setMapLayer('all'); // Show context
+  };
+
+  // EFFECT: Live Mode Simulation
+  useEffect(() => {
+    let interval;
+    if (isLiveMode) {
+        interval = setInterval(() => {
+            setRiskData(prevData => {
+                const currentData = [...prevData[timeRange]];
+                // Modify the last data point slightly to simulate live feed
+                const lastIdx = currentData.length - 1;
+                const variance = Math.floor(Math.random() * 10) - 5;
+                const newVal = Math.max(10, Math.min(90, currentData[lastIdx].val + variance));
+                
+                const newData = [...currentData];
+                newData[lastIdx] = { ...newData[lastIdx], val: newVal };
+                
+                return {
+                    ...prevData,
+                    [timeRange]: newData
+                };
+            });
+        }, 2000);
+    }
+    return () => clearInterval(interval);
+  }, [isLiveMode, timeRange]);
+
+  // Calculations for Progress Bars
+  const getResourcePercent = (type) => {
+      const item = resourceData.find(r => r.type === type);
+      return item ? (item.count / item.max) * 100 : 0;
   };
 
   return (
@@ -225,17 +334,22 @@ export default function DisasterRelief() {
         colorTheme="orange"
     >
         <AnimatePresence>
-            {isDeployOpen && <DeployModal isOpen={isDeployOpen} onClose={() => setIsDeployOpen(false)} onDeploy={handleDeploy} />}
+            {isDeployOpen && (
+                <DeployModal 
+                    isOpen={isDeployOpen} 
+                    onClose={() => setIsDeployOpen(false)} 
+                    onDeploy={handleDeploy} 
+                />
+            )}
         </AnimatePresence>
 
         {/* HEADER CONTROLS */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
             <div className="flex items-center gap-3">
-                 {/* NEW FEATURE 5: Interactive Alert Level Toggler */}
                  <motion.button 
                     whileTap={{ scale: 0.95 }}
                     onClick={toggleAlertLevel}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors cursor-pointer ${
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors cursor-pointer select-none ${
                         alertLevel === 'Red' ? 'bg-red-50 border-red-200 text-red-700' :
                         alertLevel === 'Orange' ? 'bg-orange-50 border-orange-200 text-orange-700' :
                         'bg-yellow-50 border-yellow-200 text-yellow-700'
@@ -247,9 +361,14 @@ export default function DisasterRelief() {
                     }`}></div>
                     <span className="text-xs font-bold uppercase tracking-wide">Alert Level: {alertLevel}</span>
                 </motion.button>
-                <span className="text-xs text-zinc-400 font-mono flex items-center gap-1">
-                    <RefreshCw size={10} className="animate-spin-slow"/> Live Update
-                </span>
+                
+                <button 
+                    onClick={handleRefresh}
+                    className="text-xs text-zinc-400 font-mono flex items-center gap-1 hover:text-orange-600 transition-colors"
+                >
+                    <RefreshCw key={refreshKey} size={10} className={`${refreshKey > 0 ? 'animate-spin' : ''}`}/> 
+                    Live Update
+                </button>
             </div>
 
             {/* EOC Status Widget */}
@@ -261,7 +380,7 @@ export default function DisasterRelief() {
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Ops Center</p>
                     <div className="flex items-baseline gap-1">
                         <span className="text-lg font-bold text-zinc-900">Active</span>
-                        <span className="text-xs text-zinc-400 font-medium">• 28 Teams</span>
+                        <span className="text-xs text-zinc-400 font-medium">• {resourceData.reduce((acc, curr) => acc + curr.count, 0)} Units</span>
                     </div>
                 </div>
             </div>
@@ -275,7 +394,11 @@ export default function DisasterRelief() {
                         key={kpi.id} 
                         item={kpi} 
                         isActive={activeKpi === kpi.id}
-                        onClick={() => setActiveKpi(activeKpi === kpi.id ? null : kpi.id)}
+                        onClick={() => {
+                            // Toggle Filter Logic
+                            setActiveKpi(activeKpi === kpi.id ? null : kpi.id);
+                            if (activeKpi !== kpi.id) setAlertQuery(''); // Clear text search when clicking KPI
+                        }}
                     />
                 ))}
             </div>
@@ -287,7 +410,7 @@ export default function DisasterRelief() {
             {/* LEFT: MAP & ANALYTICS (8 Cols) */}
             <div className="lg:col-span-8 flex flex-col gap-8">
                 
-                {/* Hazard Map (INTERACTIVE MARKERS & LAYERS) */}
+                {/* Hazard Map */}
                 <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-zinc-200 relative overflow-hidden h-[500px] group">
                       {/* Map Container */}
                       <div className="w-full h-full rounded-[2rem] bg-zinc-100 relative overflow-hidden">
@@ -302,12 +425,20 @@ export default function DisasterRelief() {
                         {/* Topo Lines */}
                         <div className="absolute top-0 right-0 w-96 h-96 border-[40px] border-zinc-200/50 rounded-full -mr-32 -mt-32"></div>
 
-                        {/* NEW FEATURE 1: Map Layer Controls */}
+                        {/* Map Layer Controls */}
                         <div className="absolute top-6 left-6 z-20 flex gap-2">
-                            <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-zinc-200 shadow-sm flex items-center gap-3">
-                                <Radio size={16} className="text-orange-600 animate-pulse" />
-                                <span className="text-xs font-bold text-zinc-900 uppercase tracking-wide">Live</span>
-                            </div>
+                            <button 
+                                onClick={() => setIsLiveMode(!isLiveMode)}
+                                className={`px-4 py-2 rounded-2xl border shadow-sm flex items-center gap-3 transition-all ${
+                                    isLiveMode 
+                                    ? 'bg-red-500 border-red-500 text-white' 
+                                    : 'bg-white/90 backdrop-blur-md border-zinc-200 text-zinc-900'
+                                }`}
+                            >
+                                <Radio size={16} className={isLiveMode ? 'animate-pulse' : ''} />
+                                <span className="text-xs font-bold uppercase tracking-wide">Live</span>
+                            </button>
+
                             <div className="flex bg-white/90 backdrop-blur-md rounded-2xl border border-zinc-200 shadow-sm p-1">
                                 {['all', 'flood', 'seismic'].map((layer) => (
                                     <button
@@ -323,19 +454,21 @@ export default function DisasterRelief() {
                             </div>
                         </div>
 
-                        {/* Map Markers (Filtered by State) */}
+                        {/* Map Markers */}
                         <AnimatePresence>
                             {(mapLayer === 'all' || mapLayer === 'flood') && (
                                 <motion.div 
                                     key="marker-flood"
+                                    onClick={() => handleMarkerClick("Cipedes")}
                                     className="absolute top-1/3 left-1/4 cursor-pointer z-10 group/marker"
                                     initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                                    whileHover={{ scale: 1.1 }}
                                 >
                                     <span className="absolute -inset-6 rounded-full bg-red-500/20 animate-ping"></span>
                                     <div className="w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
                                         <Waves size={12} className="text-white" />
                                     </div>
-                                    <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white/90 px-3 py-1.5 rounded-xl shadow-sm border border-zinc-100 whitespace-nowrap opacity-0 group-hover/marker:opacity-100 transition-opacity">
+                                    <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white/90 px-3 py-1.5 rounded-xl shadow-sm border border-zinc-100 whitespace-nowrap opacity-0 group-hover/marker:opacity-100 transition-opacity pointer-events-none">
                                         <p className="text-[10px] font-bold text-red-600 uppercase">Flood Zone A</p>
                                         <p className="text-[10px] text-zinc-500">Water Level: 2.4m</p>
                                     </div>
@@ -345,14 +478,16 @@ export default function DisasterRelief() {
                             {(mapLayer === 'all' || mapLayer === 'seismic') && (
                                 <motion.div 
                                     key="marker-quake"
+                                    onClick={() => handleMarkerClick("Kawalu")}
                                     className="absolute bottom-1/3 right-1/3 cursor-pointer z-10 group/marker"
                                     initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
                                     transition={{ delay: 0.1 }}
+                                    whileHover={{ scale: 1.1 }}
                                 >
                                     <div className="w-6 h-6 bg-orange-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
                                         <Activity size={12} className="text-white" />
                                     </div>
-                                    <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white/90 px-3 py-1.5 rounded-xl shadow-sm border border-zinc-100 whitespace-nowrap opacity-0 group-hover/marker:opacity-100 transition-opacity">
+                                    <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white/90 px-3 py-1.5 rounded-xl shadow-sm border border-zinc-100 whitespace-nowrap opacity-0 group-hover/marker:opacity-100 transition-opacity pointer-events-none">
                                         <p className="text-[10px] font-bold text-orange-600 uppercase">Landslide Risk</p>
                                         <p className="text-[10px] text-zinc-500">Tremor detected</p>
                                     </div>
@@ -383,7 +518,6 @@ export default function DisasterRelief() {
                                 <p className="text-[10px] text-zinc-400">Past {timeRange}</p>
                             </div>
                             
-                            {/* NEW FEATURE 2: Time Range Selector */}
                             <div className="flex bg-zinc-50 rounded-lg p-0.5 border border-zinc-100">
                                 {['12H', '24H', '7D'].map((range) => (
                                     <button
@@ -402,7 +536,7 @@ export default function DisasterRelief() {
                         </div>
                         <div className="h-40 w-full">
                             <ResponsiveContainer width="100%" height="100%">
-                                <AreaChart data={RISK_DATASETS[timeRange]}>
+                                <AreaChart data={riskData[timeRange]}>
                                     <defs>
                                         <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#f97316" stopOpacity={0.2}/>
@@ -419,7 +553,8 @@ export default function DisasterRelief() {
                                         strokeWidth={3} 
                                         fillOpacity={1} 
                                         fill="url(#colorRisk)" 
-                                        animationDuration={800}
+                                        animationDuration={isLiveMode ? 200 : 800}
+                                        isAnimationActive={true}
                                     />
                                 </AreaChart>
                             </ResponsiveContainer>
@@ -437,7 +572,7 @@ export default function DisasterRelief() {
                         <div className="h-40 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={resourceData} layout="vertical">
-                                    <XAxis type="number" hide />
+                                    <XAxis type="number" hide domain={[0, 'dataMax + 20']} />
                                     <YAxis dataKey="type" type="category" width={60} tick={{fontSize: 10}} axisLine={false} tickLine={false} />
                                     <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '12px', border: 'none' }} />
                                     <Bar dataKey="count" fill="#ea580c" radius={[0, 4, 4, 0]} barSize={20} animationDuration={500} />
@@ -503,25 +638,35 @@ export default function DisasterRelief() {
                             </div>
                         </div>
                         
-                        {/* NEW FEATURE 4: Search Bar */}
+                        {/* Search Bar */}
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={14} />
                             <input 
                                 type="text"
-                                placeholder="Filter alerts..."
+                                placeholder="Filter alerts (e.g. Flood)..."
                                 value={alertQuery}
                                 onChange={(e) => setAlertQuery(e.target.value)}
                                 className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-100 rounded-xl text-xs font-bold text-zinc-700 focus:outline-none focus:ring-2 focus:ring-orange-100 transition-all placeholder:font-normal"
                             />
+                            {alertQuery && (
+                                <button 
+                                    onClick={() => setAlertQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+                                >
+                                    <X size={12}/>
+                                </button>
+                            )}
                         </div>
                     </div>
                     
-                    <div className="space-y-3 overflow-y-auto max-h-[200px] pr-1">
+                    <div className="space-y-3 overflow-y-auto max-h-[200px] pr-1 scrollbar-hide">
                         {filteredAlerts.length > 0 ? filteredAlerts.map((alert, i) => (
                             <motion.div 
+                                layout
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ delay: i * 0.05 }}
                                 key={alert.id} 
                                 className="relative pl-4 border-l-2 border-zinc-100 group cursor-pointer hover:border-orange-200 transition-colors"
                             >
@@ -549,7 +694,9 @@ export default function DisasterRelief() {
                                 </div>
                             </motion.div>
                         )) : (
-                            <p className="text-center text-xs text-zinc-400 py-4">No alerts found.</p>
+                            <motion.p initial={{opacity:0}} animate={{opacity:1}} className="text-center text-xs text-zinc-400 py-4 italic">
+                                No matching alerts found.
+                            </motion.p>
                         )}
                     </div>
                 </div>
@@ -561,30 +708,41 @@ export default function DisasterRelief() {
                         <Box size={16} className="text-zinc-400" />
                     </div>
                     <div className="space-y-4 mb-6">
+                        {/* Dynamic Progress Bars */}
                         <div>
                             <div className="flex justify-between text-xs mb-1">
                                 <span className="text-zinc-500">Relief Packs</span>
-                                <span className="font-bold text-zinc-900">85% Ready</span>
+                                <span className="font-bold text-zinc-900">{Math.round(getResourcePercent('Logistics'))}% Ready</span>
                             </div>
                             <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
-                                <div className="h-full bg-blue-500 w-[85%] rounded-full"></div>
+                                <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${getResourcePercent('Logistics')}%` }}
+                                    transition={{ duration: 1 }}
+                                    className="h-full bg-blue-500 rounded-full"
+                                ></motion.div>
                             </div>
                         </div>
                         <div>
                             <div className="flex justify-between text-xs mb-1">
-                                <span className="text-zinc-500">Vehicles</span>
-                                <span className="font-bold text-zinc-900">12/15 Active</span>
+                                <span className="text-zinc-500">Rescue Units</span>
+                                <span className="font-bold text-zinc-900">{Math.round(getResourcePercent('Rescue'))}% Active</span>
                             </div>
                             <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500 w-[75%] rounded-full"></div>
+                                <motion.div 
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${getResourcePercent('Rescue')}%` }}
+                                    transition={{ duration: 1 }}
+                                    className="h-full bg-emerald-500 rounded-full"
+                                ></motion.div>
                             </div>
                         </div>
                     </div>
                     
-                    {/* NEW FEATURE 3 TRIGGER: Quick Deploy Button */}
+                    {/* Quick Deploy Button */}
                     <button 
                         onClick={() => setIsDeployOpen(true)}
-                        className="w-full py-3 text-xs font-bold text-white bg-zinc-900 rounded-xl hover:bg-orange-600 transition-colors uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg hover:shadow-orange-500/20"
+                        className="w-full py-3 text-xs font-bold text-white bg-zinc-900 rounded-xl hover:bg-orange-600 transition-colors uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg hover:shadow-orange-500/20 active:scale-95 duration-200"
                     >
                         <Plus size={14} /> Quick Deploy
                     </button>

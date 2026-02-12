@@ -59,7 +59,7 @@ const PageLayout = ({ title, subtitle, bgImage, colorTheme = "zinc", children })
             </div>
 
             {/* Main Content */}
-            <main className="w-full px-16 relative z-10 pb-20">
+            <main className="w-full px-4 md:px-16 relative z-10 pb-20">
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

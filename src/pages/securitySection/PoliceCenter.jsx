@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Shield, Siren, Activity, MapPin, Users, Clock, TrendingUp, TrendingDown, 
@@ -9,7 +9,8 @@ import {
   AreaChart, Area, ResponsiveContainer, XAxis, Tooltip, CartesianGrid 
 } from 'recharts';
 
-import PageLayout from '../../components/PageLayout';
+// Pastikan path ini sesuai dengan struktur project Anda, atau ganti dengan div biasa jika tidak ada
+import PageLayout from '../../components/PageLayout'; 
 
 // --- SUB-COMPONENTS ---
 
@@ -60,10 +61,14 @@ const MetricCard = ({ item }) => (
     </motion.div>
 );
 
-// --- MODALS (NEW FEATURES) ---
+// --- MODALS ---
 
-const DispatchModal = ({ incident, onClose, onAssign }) => {
+const DispatchModal = ({ incident, availableUnits, onClose, onAssign }) => {
   if (!incident) return null;
+
+  // Urutkan unit berdasarkan jarak simulasi (randomized static for UI feel)
+  const sortedUnits = [...availableUnits].sort(() => Math.random() - 0.5);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <motion.div 
@@ -75,7 +80,7 @@ const DispatchModal = ({ incident, onClose, onAssign }) => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-xl font-bold text-zinc-900">Dispatch Unit</h3>
-            <p className="text-xs text-zinc-400">Case ID: #{incident.id.toString().padStart(4, '0')}</p>
+            <p className="text-xs text-zinc-400">Case ID: #{incident.id.toString().slice(-4)}</p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-zinc-100 rounded-full transition-colors"><X size={20} /></button>
         </div>
@@ -90,22 +95,29 @@ const DispatchModal = ({ incident, onClose, onAssign }) => {
           </div>
         </div>
 
-        <div className="space-y-3 mb-6">
-          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider">Recommended Units</p>
-          {[101, 104, 202].map(unit => (
-            <button key={unit} onClick={() => onAssign(unit)} className="w-full flex items-center justify-between p-3 rounded-xl border border-zinc-200 hover:border-blue-500 hover:bg-blue-50 transition-all group">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">P{unit}</div>
-                <div className="text-left">
-                  <p className="text-sm font-bold text-zinc-900">Patrol Unit {unit}</p>
-                  <p className="text-[10px] text-zinc-500">0.8km away • 2 min ETA</p>
-                </div>
-              </div>
-              <div className="px-3 py-1 bg-white text-zinc-900 text-xs font-bold rounded-lg border border-zinc-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                Assign
-              </div>
-            </button>
-          ))}
+        <div className="space-y-3 mb-6 max-h-[250px] overflow-y-auto custom-scrollbar pr-2">
+          <p className="text-xs font-bold text-zinc-400 uppercase tracking-wider sticky top-0 bg-white pb-2">Available Units ({sortedUnits.length})</p>
+          
+          {sortedUnits.length === 0 ? (
+            <div className="text-center py-4 text-zinc-400 text-sm bg-zinc-50 rounded-xl border border-dashed border-zinc-200">
+                No units available. Please wait.
+            </div>
+          ) : (
+             sortedUnits.map(unit => (
+                <button key={unit.id} onClick={() => onAssign(unit.id)} className="w-full flex items-center justify-between p-3 rounded-xl border border-zinc-200 hover:border-blue-500 hover:bg-blue-50 transition-all group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">P{unit.id}</div>
+                    <div className="text-left">
+                      <p className="text-sm font-bold text-zinc-900">Patrol Unit {unit.id}</p>
+                      <p className="text-[10px] text-zinc-500">{(Math.random() * 2).toFixed(1)}km away • {Math.floor(Math.random() * 5) + 1} min ETA</p>
+                    </div>
+                  </div>
+                  <div className="px-3 py-1 bg-white text-zinc-900 text-xs font-bold rounded-lg border border-zinc-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    Assign
+                  </div>
+                </button>
+              ))
+          )}
         </div>
       </motion.div>
     </div>
@@ -115,80 +127,105 @@ const DispatchModal = ({ incident, onClose, onAssign }) => {
 // --- MAIN COMPONENT ---
 
 export default function PoliceCenter() {
-  // --- STATE MANAGEMENT (NEW) ---
+  // --- STATE MANAGEMENT ---
   const [time, setTime] = useState(new Date());
-  const [isEmergency, setIsEmergency] = useState(false); // Feature: Emergency Alert
-  const [mapMode, setMapMode] = useState('map'); // Feature: CCTV Toggle
-  const [searchQuery, setSearchQuery] = useState(''); // Feature: Search
-  const [filterPriority, setFilterPriority] = useState('all'); // Feature: Filter
-  const [selectedIncident, setSelectedIncident] = useState(null); // Feature: Dispatch Modal
+  const [isEmergency, setIsEmergency] = useState(false);
+  const [mapMode, setMapMode] = useState('map');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterPriority, setFilterPriority] = useState('all');
+  const [selectedIncident, setSelectedIncident] = useState(null);
   
-  // Real-time Data States
-  const [kpiData, setKpiData] = useState([
-    { id: 1, label: 'Active Cases', sub: 'Open Investigations', value: 28, trend: 4, icon: AlertTriangle, color: 'rose' },
-    { id: 2, label: 'Avg Response', sub: 'Dispatch Time', value: 272, trend: -8, icon: Clock, color: 'blue' }, // seconds
-    { id: 3, label: 'Resolution Rate', sub: 'Case Closed', value: 92.4, trend: 1.2, icon: CheckCircle2, color: 'emerald' },
-    { id: 4, label: 'Units Deployed', sub: 'On Patrol', value: 20, trend: 0, icon: Car, color: 'indigo' },
-  ]);
-
+  // Real Logic State
   const [incidents, setIncidents] = useState([
-    { id: 1, type: "Traffic Collision", loc: "Jalan HZ Mustofa", time: "2m ago", priority: "high" },
-    { id: 2, type: "Public Disturbance", loc: "Cihideung Market", time: "12m ago", priority: "med" },
-    { id: 3, type: "Suspicious Activity", loc: "Dadaha Park", time: "25m ago", priority: "low" },
-    { id: 4, type: "Traffic Obstruction", loc: "Indihiang Terminal", time: "40m ago", priority: "low" },
+    { id: 1701, type: "Traffic Collision", loc: "Jalan HZ Mustofa", time: new Date(Date.now() - 120000), priority: "high" },
+    { id: 1702, type: "Public Disturbance", loc: "Cihideung Market", time: new Date(Date.now() - 720000), priority: "med" },
+    { id: 1703, type: "Suspicious Activity", loc: "Dadaha Park", time: new Date(Date.now() - 1500000), priority: "low" },
+    { id: 1704, type: "Traffic Obstruction", loc: "Indihiang Terminal", time: new Date(Date.now() - 2400000), priority: "low" },
   ]);
 
-  const [unitStatus, setUnitStatus] = useState([
-    { status: 'Available', count: 12, total: 20, color: 'bg-emerald-500' },
-    { status: 'Responding', count: 5, total: 20, color: 'bg-amber-500' },
-    { status: 'On Patrol', count: 3, total: 20, color: 'bg-blue-600' },
-  ]);
+  // Unit State Management (Id, Status: 'idle' | 'busy' | 'patrol')
+  const [units, setUnits] = useState(
+      Array.from({ length: 20 }, (_, i) => ({ 
+          id: 101 + i, 
+          status: i < 12 ? 'idle' : i < 17 ? 'busy' : 'patrol' 
+      }))
+  );
 
-  // --- NEW FEATURE: REAL-TIME SIMULATION LOGIC ---
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTime(new Date());
+  const [resolvedCount, setResolvedCount] = useState(142); // Accumulator for KPI
 
-      // Simulate KPI Jitter
-      setKpiData(prev => prev.map(item => {
-        const jitter = Math.random() > 0.7 ? (Math.random() - 0.5) * 2 : 0;
-        return { ...item, value: item.value + (item.label === 'Active Cases' ? Math.round(jitter) : jitter * 0.1), trend: item.trend + jitter };
-      }));
-    }, 1000);
+  // --- DERIVED STATS ---
+  const unitStats = useMemo(() => {
+      const idle = units.filter(u => u.status === 'idle').length;
+      const busy = units.filter(u => u.status === 'busy').length;
+      const patrol = units.filter(u => u.status === 'patrol').length;
+      return [
+        { status: 'Available', count: idle, total: units.length, color: 'bg-emerald-500' },
+        { status: 'Responding', count: busy, total: units.length, color: 'bg-amber-500' },
+        { status: 'On Patrol', count: patrol, total: units.length, color: 'bg-blue-600' },
+      ];
+  }, [units]);
 
-    // Simulate Incident Feed (Add new incident every 15s)
-    const incidentTimer = setInterval(() => {
-      const types = ["Theft Report", "Noise Complaint", "Traffic Stop", "Medical Assist"];
-      const locs = ["Simpang Lima", "Tawang Square", "Cikalang", "Mangkubumi"];
-      const newInc = {
-        id: Date.now(),
-        type: types[Math.floor(Math.random() * types.length)],
-        loc: locs[Math.floor(Math.random() * locs.length)],
-        time: "Just now",
-        priority: Math.random() > 0.8 ? "high" : "low"
-      };
-      setIncidents(prev => [newInc, ...prev].slice(0, 8)); // Keep max 8 items
+  const kpiData = useMemo(() => {
+    return [
+        { id: 1, label: 'Active Cases', sub: 'Open Investigations', value: incidents.length, trend: incidents.length > 5 ? 12 : -5, icon: AlertTriangle, color: 'rose' },
+        { id: 2, label: 'Avg Response', sub: 'Dispatch Time', value: 272 - (unitStats[0].count * 2), trend: -8, icon: Clock, color: 'blue' },
+        { id: 3, label: 'Resolution Rate', sub: 'Case Closed', value: (resolvedCount / (resolvedCount + incidents.length) * 100), trend: 1.2, icon: CheckCircle2, color: 'emerald' },
+        { id: 4, label: 'Units Deployed', sub: 'On Patrol', value: unitStats[1].count + unitStats[2].count, trend: 0, icon: Car, color: 'indigo' },
+    ];
+  }, [incidents.length, unitStats, resolvedCount]);
+
+  // --- ACTIONS ---
+
+  const handleDispatch = useCallback((unitId) => {
+      // 1. Update unit status to busy
+      setUnits(prev => prev.map(u => u.id === unitId ? { ...u, status: 'busy' } : u));
       
-      // Update unit count slightly
-      setUnitStatus(prev => {
-        const newAvailable = Math.max(0, Math.min(20, prev[0].count + (Math.random() > 0.5 ? 1 : -1)));
-        const responding = 20 - newAvailable - prev[2].count;
-        return [
-            { ...prev[0], count: newAvailable },
-            { ...prev[1], count: Math.max(0, responding) },
-            prev[2]
-        ];
-      });
+      // 2. Resolve incident (remove from active list)
+      if (selectedIncident) {
+        setIncidents(prev => prev.filter(i => i.id !== selectedIncident.id));
+        setResolvedCount(prev => prev + 1);
+        setSelectedIncident(null);
+      }
 
-    }, 15000);
+      // 3. Simulation: Unit becomes available again after random time (5-10 seconds for demo purpose)
+      setTimeout(() => {
+          setUnits(prev => prev.map(u => u.id === unitId ? { ...u, status: 'idle' } : u));
+      }, Math.random() * 5000 + 5000);
+
+  }, [selectedIncident]);
+
+  // --- SIMULATION LOOPS ---
+
+  useEffect(() => {
+    const clockTimer = setInterval(() => setTime(new Date()), 1000);
+
+    // Incident Generator
+    const incidentTimer = setInterval(() => {
+      const types = ["Theft Report", "Noise Complaint", "Traffic Stop", "Medical Assist", "Fire Alarm", "Vandalism"];
+      const locs = ["Simpang Lima", "Tawang Square", "Cikalang", "Mangkubumi", "Alun-alun", "Pecinan"];
+      
+      // Higher chance to spawn incident if Emergency Mode is ON
+      const spawnChance = isEmergency ? 0.8 : 0.3;
+
+      if (Math.random() < spawnChance && incidents.length < 12) {
+          const newInc = {
+            id: Date.now(),
+            type: types[Math.floor(Math.random() * types.length)],
+            loc: locs[Math.floor(Math.random() * locs.length)],
+            time: new Date(),
+            priority: Math.random() > 0.7 ? "high" : Math.random() > 0.4 ? "med" : "low"
+          };
+          setIncidents(prev => [newInc, ...prev]);
+      }
+    }, 5000); // Check every 5s
 
     return () => {
-      clearInterval(timer);
+      clearInterval(clockTimer);
       clearInterval(incidentTimer);
     };
-  }, []);
+  }, [isEmergency, incidents.length]);
 
-  // --- NEW FEATURE: SEARCH & FILTER LOGIC ---
+  // --- FILTER LOGIC ---
   const filteredIncidents = useMemo(() => {
     return incidents.filter(inc => {
       const matchesSearch = inc.type.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -205,6 +242,11 @@ export default function PoliceCenter() {
     return `${m}m ${s}s`;
   };
 
+  const getRelativeTime = (date) => {
+      const diff = Math.floor((new Date() - date) / 1000 / 60);
+      return diff < 1 ? "Just now" : `${diff}m ago`;
+  };
+
   // --- RENDER ---
   return (
     <PageLayout 
@@ -212,7 +254,7 @@ export default function PoliceCenter() {
         subtitle="Law Enforcement" 
         colorTheme="blue"
     >
-        {/* NEW FEATURE: EMERGENCY BROADCAST ALERT */}
+        {/* EMERGENCY BROADCAST ALERT */}
         <AnimatePresence>
             {isEmergency && (
                 <motion.div 
@@ -221,10 +263,12 @@ export default function PoliceCenter() {
                 >
                     <div className="bg-rose-600 text-white p-4 rounded-3xl flex items-center justify-between shadow-xl shadow-rose-200 animate-pulse">
                         <div className="flex items-center gap-4">
-                            <Siren size={32} className="animate-spin" />
+                            <div className="bg-white/20 p-3 rounded-full animate-spin duration-1000">
+                                <Siren size={32} />
+                            </div>
                             <div>
                                 <h2 className="text-xl font-bold uppercase tracking-widest">Code Red Active</h2>
-                                <p className="text-rose-100 text-sm">City-wide lockdown protocols initiated. All units respond.</p>
+                                <p className="text-rose-100 text-sm">City-wide lockdown protocols initiated. High incident rate.</p>
                             </div>
                         </div>
                         <button onClick={() => setIsEmergency(false)} className="px-6 py-2 bg-white text-rose-600 font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-rose-50 transition-colors">
@@ -248,14 +292,13 @@ export default function PoliceCenter() {
             </div>
 
             <div className="flex items-center gap-4">
-                {/* NEW FEATURE: EMERGENCY TRIGGER BUTTON */}
                 <button 
                     onClick={() => setIsEmergency(!isEmergency)}
                     className={`p-3 rounded-full transition-all border ${
                         isEmergency ? 'bg-zinc-800 text-white border-zinc-700' : 'bg-white text-zinc-400 border-zinc-200 hover:text-rose-500 hover:border-rose-200'
                     }`}
                 >
-                    <Bell size={20} />
+                    <Bell size={20} className={isEmergency ? "animate-swing" : ""} />
                 </button>
 
                 {/* Safety Score Widget */}
@@ -266,8 +309,10 @@ export default function PoliceCenter() {
                     <div>
                         <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">City Safety Index</p>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-lg font-bold text-zinc-900">{isEmergency ? 'CRITICAL' : 'HIGH'}</span>
-                            <span className="text-xs text-zinc-400 font-medium">• Level {isEmergency ? '5' : '1'}</span>
+                            <span className="text-lg font-bold text-zinc-900 transition-all">
+                                {isEmergency ? 'CRITICAL' : incidents.length > 8 ? 'MODERATE' : 'HIGH'}
+                            </span>
+                            <span className="text-xs text-zinc-400 font-medium">• Level {isEmergency ? '5' : incidents.length > 8 ? '3' : '1'}</span>
                         </div>
                     </div>
                 </div>
@@ -300,7 +345,7 @@ export default function PoliceCenter() {
                       {/* Map Container */}
                       <div className="w-full h-full rounded-[2rem] bg-zinc-100 relative overflow-hidden">
                         
-                        {/* NEW FEATURE: CCTV MODE TOGGLE */}
+                        {/* CCTV MODE TOGGLE */}
                         <div className="absolute top-6 right-6 z-30 flex bg-white/90 backdrop-blur rounded-2xl p-1 border border-zinc-200 shadow-sm">
                             <button 
                                 onClick={() => setMapMode('map')}
@@ -347,17 +392,17 @@ export default function PoliceCenter() {
                                         <Car size={14} />
                                     </div>
                                     <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-blue-900 text-white text-[9px] px-2 py-1 rounded opacity-0 group-hover/unit:opacity-100 transition-opacity whitespace-nowrap">
-                                        Unit 104
+                                        Unit 104 (Patrol)
                                     </div>
                                 </motion.div>
 
                                 {/* Incidents (Red Markers) */}
-                                {incidents.slice(0, 3).map((inc, i) => (
+                                {incidents.slice(0, 5).map((inc, i) => (
                                     <div 
                                         key={inc.id}
                                         className="absolute group cursor-pointer z-10"
-                                        style={{ top: `${30 + (i * 15)}%`, left: `${40 + (i * 10)}%` }}
-                                        onClick={() => setSelectedIncident(inc)} // Feature: Click map to dispatch
+                                        style={{ top: `${30 + (i * 12) + (Math.sin(i) * 10)}%`, left: `${40 + (i * 8) + (Math.cos(i) * 10)}%` }}
+                                        onClick={() => setSelectedIncident(inc)}
                                     >
                                         <div className="relative">
                                             <span className={`absolute -inset-4 rounded-full animate-ping ${inc.priority === 'high' ? 'bg-rose-500/20' : 'bg-amber-500/20'}`}></span>
@@ -366,6 +411,7 @@ export default function PoliceCenter() {
                                             <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-3 py-2 rounded-xl shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
                                                 <p className="text-[10px] font-bold uppercase text-rose-400">{inc.type}</p>
                                                 <p className="text-[10px] text-zinc-300">{inc.loc}</p>
+                                                <p className="text-[9px] text-zinc-500 mt-1">Click to dispatch</p>
                                             </div>
                                         </div>
                                     </div>
@@ -382,7 +428,7 @@ export default function PoliceCenter() {
                                 </div>
                             </>
                         ) : (
-                            // --- CCTV VIEW (NEW FEATURE) ---
+                            // --- CCTV VIEW ---
                             <div className="w-full h-full bg-zinc-900 grid grid-cols-2 grid-rows-2 gap-1 p-1">
                                 {[1, 2, 3, 4].map(cam => (
                                     <div key={cam} className="relative bg-zinc-800 rounded-xl overflow-hidden group">
@@ -390,7 +436,7 @@ export default function PoliceCenter() {
                                             <Video size={40} className="text-zinc-600" />
                                         </div>
                                         {/* Simulated Grain/Static */}
-                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10"></div>
+                                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 animate-pulse"></div>
                                         <div className="absolute top-3 left-3 flex items-center gap-2">
                                             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
                                             <span className="text-[9px] font-mono text-white/70">REC • CAM_0{cam}</span>
@@ -418,7 +464,8 @@ export default function PoliceCenter() {
                             <ResponsiveContainer width="100%" height="100%">
                                 <AreaChart data={[
                                     { time: '08:00', val: 12 }, { time: '10:00', val: 18 }, { time: '12:00', val: 15 },
-                                    { time: '14:00', val: 22 }, { time: '16:00', val: 28 }, { time: '18:00', val: 20 }
+                                    { time: '14:00', val: 22 }, { time: '16:00', val: 28 }, { time: '18:00', val: 20 },
+                                    { time: '20:00', val: incidents.length + 15 } // Dynamic tip
                                 ]}>
                                     <defs>
                                         <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1">
@@ -442,7 +489,7 @@ export default function PoliceCenter() {
                             <button className="p-1 hover:bg-zinc-100 rounded-full text-zinc-400"><MoreHorizontal size={16} /></button>
                         </div>
                         <div className="space-y-4">
-                            {unitStatus.map((unit, i) => (
+                            {unitStats.map((unit, i) => (
                                 <div key={i}>
                                     <div className="flex justify-between text-xs mb-1 font-medium text-zinc-600">
                                         <span>{unit.status}</span>
@@ -452,7 +499,7 @@ export default function PoliceCenter() {
                                         <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${(unit.count / unit.total) * 100}%` }}
-                                            transition={{ duration: 1 }}
+                                            transition={{ duration: 0.5 }}
                                             className={`h-full rounded-full ${unit.color}`} 
                                         />
                                     </div>
@@ -483,14 +530,14 @@ export default function PoliceCenter() {
                             <div className="flex justify-between items-center p-3 bg-white/5 rounded-2xl border border-white/5">
                                 <div>
                                     <p className={`text-[10px] font-bold uppercase ${isEmergency ? 'text-rose-200' : 'text-blue-200'}`}>Available Units</p>
-                                    <p className="text-xl font-bold">{unitStatus[0].count}</p>
+                                    <p className="text-xl font-bold">{unitStats[0].count}</p>
                                 </div>
                                 <Car size={20} className={`${isEmergency ? 'text-rose-400' : 'text-blue-400'}`} />
                             </div>
                             <div className="flex justify-between items-center p-3 bg-white/5 rounded-2xl border border-white/5">
                                 <div>
                                     <p className={`text-[10px] font-bold uppercase ${isEmergency ? 'text-rose-200' : 'text-blue-200'}`}>Response Efficiency</p>
-                                    <p className="text-xl font-bold">{kpiData[2].value}%</p>
+                                    <p className="text-xl font-bold">{Math.floor(kpiData[2].value)}%</p>
                                 </div>
                                 <CheckCircle2 size={20} className="text-emerald-400" />
                             </div>
@@ -510,7 +557,7 @@ export default function PoliceCenter() {
                         </div>
                     </div>
                     
-                    {/* NEW FEATURE: SEARCH & FILTER UI */}
+                    {/* SEARCH & FILTER UI */}
                     <div className="mb-4 space-y-3">
                         <div className="relative">
                             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
@@ -548,7 +595,7 @@ export default function PoliceCenter() {
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, scale: 0.9 }}
                                     key={inc.id} 
-                                    onClick={() => setSelectedIncident(inc)} // Trigger Dispatch Modal
+                                    onClick={() => setSelectedIncident(inc)}
                                     className="flex gap-4 items-start p-3 hover:bg-blue-50 rounded-2xl transition-all cursor-pointer group border border-transparent hover:border-blue-100"
                                 >
                                     <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${
@@ -559,7 +606,7 @@ export default function PoliceCenter() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start">
                                             <p className="text-sm font-bold text-zinc-900 truncate group-hover:text-blue-900 transition-colors">{inc.type}</p>
-                                            <span className="text-[10px] text-zinc-400 whitespace-nowrap bg-zinc-50 px-1.5 py-0.5 rounded-md">{inc.time}</span>
+                                            <span className="text-[10px] text-zinc-400 whitespace-nowrap bg-zinc-50 px-1.5 py-0.5 rounded-md">{getRelativeTime(inc.time)}</span>
                                         </div>
                                         <div className="flex items-center gap-1.5 mt-1">
                                             <MapPin size={10} className="text-zinc-400 group-hover:text-blue-400" />
@@ -574,7 +621,10 @@ export default function PoliceCenter() {
                                 </motion.div>
                             ))}
                             {filteredIncidents.length === 0 && (
-                                <div className="text-center py-8 text-zinc-400 text-xs">No incidents found matching criteria.</div>
+                                <div className="text-center py-8 text-zinc-400 text-xs">
+                                    No incidents found matching criteria.
+                                    {incidents.length === 0 && <p className="mt-2 text-emerald-500">All clear.</p>}
+                                </div>
                             )}
                         </AnimatePresence>
                     </div>
@@ -587,17 +637,14 @@ export default function PoliceCenter() {
             </div>
         </div>
         
-        {/* DISPATCH MODAL COMPONENT (Rendered Conditionally) */}
+        {/* DISPATCH MODAL COMPONENT */}
         <AnimatePresence>
             {selectedIncident && (
                 <DispatchModal 
                     incident={selectedIncident} 
+                    availableUnits={units.filter(u => u.status === 'idle')}
                     onClose={() => setSelectedIncident(null)} 
-                    onAssign={(unitId) => {
-                        // Simulation: Change incident status or remove
-                        alert(`Unit ${unitId} dispatched to ${selectedIncident.type}`);
-                        setSelectedIncident(null);
-                    }}
+                    onAssign={handleDispatch}
                 />
             )}
         </AnimatePresence>

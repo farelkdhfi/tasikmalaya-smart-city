@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Flame, Truck, Droplets, Thermometer, Activity, Clock, TrendingUp, TrendingDown, 
@@ -25,16 +25,20 @@ const generateTimeData = () => {
   return data;
 };
 
+// Initial state with valid simulation properties
 const INITIAL_INCIDENTS = [
   { id: 1, type: "Structure Fire", loc: "Jl. Otto Iskandardinata", time: "Now", severity: "high", status: "Active", dispatched: 0, x: 30, y: 40 },
   { id: 2, type: "Brush Fire", loc: "Cibalong Outskirts", time: "15m ago", severity: "med", status: "Active", dispatched: 1, x: 60, y: 70 },
 ];
 
+const STREET_NAMES = ["Jl. Merdeka", "Pasar Lama", "Simpang Lima", "Bukit Raya", "Kawasan Industri", "Perum. Griya", "Jl. Sudirman"];
+
 // --- SUB-COMPONENTS ---
 
 const TrendBadge = ({ value, invert = false }) => {
   const isPositive = value > 0;
-  const isGood = (isPositive && !invert) || (!isPositive && invert);
+  // If invert is true (e.g. Active Fires), then Negative trend is "Good" (Green)
+  const isGood = invert ? !isPositive : isPositive;
   
   if (value === 0) return <div className="bg-zinc-100 text-zinc-500 text-xs px-2 py-1 rounded-full font-bold">Stable</div>;
 
@@ -67,7 +71,7 @@ const MetricCard = ({ item }) => (
         <h3 className="text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-red-600 transition-colors">
           {item.value}
         </h3>
-        <TrendBadge value={item.trend} invert={item.label === 'Active Fires' || item.label === 'Avg Response'} />
+        <TrendBadge value={item.trend} invert={item.invert} />
       </div>
       <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">{item.label}</p>
     </div>
@@ -86,42 +90,107 @@ export default function FireResponse() {
   const [unitsAvailable, setUnitsAvailable] = useState(12);
   const [totalUnits] = useState(20);
   const [weather, setWeather] = useState({ wind: 12, dir: 'NW', temp: 32 });
+  
+  // UI States
   const [selectedIncidentId, setSelectedIncidentId] = useState(null);
   const [mapFilters, setMapFilters] = useState({ hydrants: true, grid: true });
   const [broadcastMsg, setBroadcastMsg] = useState("");
   const [alertVisible, setAlertVisible] = useState(false);
-  const [kpiStats, setKpiStats] = useState({
-    activeFires: 3,
-    avgResponse: '6m 12s',
-    responseVal: 372, // seconds
-    riskIndex: 'Med'
-  });
+  const [riskIndex, setRiskIndex] = useState('Med');
 
-  // Derived state
-  const selectedIncident = incidents.find(i => i.id === selectedIncidentId);
+  // Derived
+  const selectedIncident = useMemo(() => incidents.find(i => i.id === selectedIncidentId), [incidents, selectedIncidentId]);
 
-  // --- SIMULATION EFFECTS ---
+  // --- ACTIONS & HANDLERS ---
 
-  // 1. Weather & Risk Simulation (Changes every 5s)
+  // Helper to show toast
+  const triggerAlert = (msg) => {
+    setBroadcastMsg(msg);
+    setAlertVisible(true);
+    setTimeout(() => setAlertVisible(false), 3000);
+  };
+
+  const handleDispatch = (id) => {
+    if (unitsAvailable > 0) {
+      setUnitsAvailable(prev => prev - 1);
+      setIncidents(prev => prev.map(inc => 
+        inc.id === id ? { ...inc, dispatched: inc.dispatched + 1, status: "Responding" } : inc
+      ));
+      triggerAlert(`Unit dispatched to Incident #${id}`);
+    } else {
+      triggerAlert("NEGATIVE. No units available!");
+    }
+  };
+
+  const handleResolve = (id) => {
+      const incident = incidents.find(i => i.id === id);
+      if(!incident) return;
+
+      // Return units dispatched to this incident
+      const unitsReturning = incident.dispatched;
+      
+      setIncidents(prev => prev.filter(i => i.id !== id));
+      setSelectedIncidentId(null);
+      
+      // Animate units returning (simulated by state update)
+      setUnitsAvailable(prev => Math.min(totalUnits, prev + unitsReturning));
+      triggerAlert(`Incident #${id} Resolved. ${unitsReturning} Units RTB.`);
+  };
+
+  const handleBroadcast = () => {
+    triggerAlert("ALL STATIONS: GENERAL ALERT BROADCAST SENT");
+  };
+
+  const toggleRestock = () => {
+    if (unitsAvailable < totalUnits) {
+      setUnitsAvailable(prev => Math.min(totalUnits, prev + 1));
+      triggerAlert("Unit restocked and ready.");
+    }
+  };
+
+  // --- SIMULATION LOOP (End-to-End Flow) ---
+
   useEffect(() => {
     const interval = setInterval(() => {
+      // 1. Weather Update
       const dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
       const newWind = Math.max(0, weather.wind + (Math.random() > 0.5 ? 2 : -2));
-      const newRisk = newWind > 20 ? 'High' : newWind > 10 ? 'Med' : 'Low';
+      const currentRisk = newWind > 25 ? 'High' : newWind > 15 ? 'Med' : 'Low';
       
       setWeather(prev => ({
         ...prev,
         wind: newWind,
         dir: dirs[Math.floor(Math.random() * dirs.length)]
       }));
-      setKpiStats(prev => ({ ...prev, riskIndex: newRisk }));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [weather.wind]);
+      setRiskIndex(currentRisk);
 
-  // 2. Response Time & Chart Simulation (Changes every 3s)
-  useEffect(() => {
-    const interval = setInterval(() => {
+      // 2. Incident Spawner (Game Loop)
+      // High wind = Higher chance of fire
+      const spawnChance = currentRisk === 'High' ? 0.4 : 0.15;
+      
+      setIncidents(currentIncidents => {
+        // Limit max incidents to keep UI clean
+        if (currentIncidents.length < 5 && Math.random() < spawnChance) {
+           const newId = Math.floor(Math.random() * 10000);
+           const newInc = {
+             id: newId,
+             type: Math.random() > 0.6 ? "Structure Fire" : "Brush Fire",
+             loc: STREET_NAMES[Math.floor(Math.random() * STREET_NAMES.length)],
+             time: "Just now",
+             severity: Math.random() > 0.7 ? "high" : "med",
+             status: "New",
+             dispatched: 0,
+             x: Math.floor(Math.random() * 70) + 10, // Keep within map bounds
+             y: Math.floor(Math.random() * 70) + 10
+           };
+           // Optional: Auto-select new incident to draw attention?
+           // setSelectedIncidentId(newId); 
+           return [...currentIncidents, newInc];
+        }
+        return currentIncidents;
+      });
+
+      // 3. Chart Updates
       setResponseTrend(prev => {
         const newData = [...prev];
         const lastVal = newData[newData.length - 1].val;
@@ -130,58 +199,25 @@ export default function FireResponse() {
         newData.push({ time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), val: nextVal });
         return newData;
       });
-      
-      // Randomly adjust Avg Response text slightly
-      const sec = kpiStats.responseVal + (Math.random() > 0.5 ? 5 : -5);
-      setKpiStats(prev => ({
-        ...prev,
-        responseVal: sec,
-        avgResponse: `${Math.floor(sec / 60)}m ${sec % 60}s`
-      }));
 
-    }, 3000);
+    }, 3000); // Tick every 3 seconds
+
     return () => clearInterval(interval);
-  }, [kpiStats.responseVal]);
+  }, [weather.wind]);
 
-  // --- HANDLERS ---
 
-  const handleDispatch = (id) => {
-    if (unitsAvailable > 0) {
-      setUnitsAvailable(prev => prev - 1);
-      setIncidents(prev => prev.map(inc => 
-        inc.id === id ? { ...inc, dispatched: inc.dispatched + 1, status: "Responding" } : inc
-      ));
-      // Trigger Alert
-      setBroadcastMsg(`Unit dispatched to Incident #${id}`);
-      setAlertVisible(true);
-      setTimeout(() => setAlertVisible(false), 3000);
-    }
-  };
-
-  const handleResolve = (id) => {
-     setIncidents(prev => prev.filter(i => i.id !== id));
-     setSelectedIncidentId(null);
-     // Return units (simplified logic)
-     setUnitsAvailable(prev => Math.min(totalUnits, prev + 1));
-  };
-
-  const handleBroadcast = () => {
-    setBroadcastMsg("ALL STATIONS: GENERAL ALERT BROADCAST");
-    setAlertVisible(true);
-    setTimeout(() => setAlertVisible(false), 4000);
-  };
-
-  const toggleRestock = () => {
-    if (unitsAvailable < totalUnits) {
-      setUnitsAvailable(prev => Math.min(totalUnits, prev + 1));
-    }
+  // --- DYNAMIC KPI DATA ---
+  const kpiStats = {
+    activeFires: incidents.length,
+    avgResponse: '6m 12s', // Could be calculated, keeping static for smooth UI simulation
+    riskIndex: riskIndex
   };
 
   const KPI_DATA = [
-    { id: 1, label: 'Active Fires', sub: 'Confirmed Reports', value: incidents.length, trend: incidents.length > 2 ? +10 : -5, icon: Flame },
-    { id: 2, label: 'Avg Response', sub: 'Dispatch Time', value: kpiStats.avgResponse, trend: -4, icon: Clock },
-    { id: 3, label: 'Risk Index', sub: 'FDR Level', value: kpiStats.riskIndex, trend: kpiStats.riskIndex === 'High' ? +20 : 0, icon: Thermometer },
-    { id: 4, label: 'Units Deployed', sub: 'Active Fleet', value: `${totalUnits - unitsAvailable}/${totalUnits}`, trend: +85, icon: Truck },
+    { id: 1, label: 'Active Fires', sub: 'Confirmed Reports', value: kpiStats.activeFires, trend: incidents.length > 2 ? +10 : -5, invert: true, icon: Flame },
+    { id: 2, label: 'Avg Response', sub: 'Dispatch Time', value: kpiStats.avgResponse, trend: -4, invert: true, icon: Clock },
+    { id: 3, label: 'Risk Index', sub: 'FDR Level', value: kpiStats.riskIndex, trend: kpiStats.riskIndex === 'High' ? +20 : 0, invert: true, icon: Thermometer },
+    { id: 4, label: 'Units Deployed', sub: 'Active Fleet', value: `${totalUnits - unitsAvailable}/${totalUnits}`, trend: ((totalUnits - unitsAvailable)/totalUnits * 100).toFixed(0), invert: false, icon: Truck },
   ];
 
   return (
@@ -190,7 +226,7 @@ export default function FireResponse() {
         subtitle="Emergency Command" 
         colorTheme="red"
     >
-        {/* FITUR BARU 3: BROADCAST ALERT SYSTEM (Toast) */}
+        {/* TOAST NOTIFICATION SYSTEM */}
         <AnimatePresence>
           {alertVisible && (
             <motion.div 
@@ -220,7 +256,7 @@ export default function FireResponse() {
               </button>
 
               {/* Fire Danger Widget (Dynamic) */}
-              <div className="bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4">
+              <div className="bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4 transition-all duration-500">
                   <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-colors duration-500 ${kpiStats.riskIndex === 'High' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>
                       <Flame size={20} fill="currentColor" />
                   </div>
@@ -235,7 +271,7 @@ export default function FireResponse() {
             </div>
         </div>
 
-        {/* KPI SECTION */}
+        {/* KPI SECTION (Driven by State) */}
         <section className="mb-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {KPI_DATA.map((kpi) => (
@@ -253,9 +289,9 @@ export default function FireResponse() {
                 {/* Tactical Map */}
                 <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-zinc-200 relative overflow-hidden h-[500px] group">
                       {/* Map Container */}
-                      <div className="w-full h-full rounded-[2rem] bg-zinc-100 relative overflow-hidden select-none">
+                      <div className="w-full h-full rounded-[2rem] bg-zinc-100 relative overflow-hidden select-none" onClick={() => setSelectedIncidentId(null)}>
                         
-                        {/* City Grid (Toggleable via Filters) */}
+                        {/* City Grid (Toggleable) */}
                         {mapFilters.grid && (
                           <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(to_right,#000000_1px,transparent_1px),linear-gradient(to_bottom,#000000_1px,transparent_1px)] bg-[size:40px_40px]"></div>
                         )}
@@ -263,13 +299,13 @@ export default function FireResponse() {
                         <div className="absolute top-1/4 left-1/4 w-32 h-32 border-2 border-zinc-200 rotate-45"></div>
                         <div className="absolute bottom-1/3 right-1/4 w-48 h-48 border-2 border-zinc-200 rounded-full"></div>
                         
-                        {/* Map Overlay Info & FITUR BARU 2: Map Filters */}
-                        <div className="absolute top-6 left-6 z-20 flex flex-col gap-2">
+                        {/* Map Overlay Info & Filters */}
+                        <div className="absolute top-6 left-6 z-20 flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
                             <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-zinc-200 shadow-sm flex flex-col gap-1 w-max">
                                 <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
                                     <MapIcon size={16} className="text-red-600" /> Tactical View
                                 </h3>
-                                {/* FITUR BARU 4: Dynamic Wind */}
+                                {/* Dynamic Wind */}
                                 <div className="flex items-center gap-2 text-[10px] text-zinc-500">
                                     <Wind size={12} style={{ transform: `rotate(${weather.dir === 'N' ? 0 : weather.dir === 'E' ? 90 : 180}deg)`}}/> 
                                     Wind: {weather.dir} {weather.wind}km/h
@@ -292,19 +328,29 @@ export default function FireResponse() {
                         </div>
 
                         {/* Hydrants (Toggleable) */}
+                        <AnimatePresence>
                         {mapFilters.hydrants && [...Array(5)].map((_, i) => (
-                            <div key={i} className="absolute w-2 h-2 bg-blue-500 rounded-full shadow-sm border border-white" 
-                                style={{ top: `${20 + i * 15}%`, left: `${15 + i * 12}%` }} />
+                            <motion.div 
+                                initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                                key={`hydrant-${i}`} 
+                                className="absolute w-2 h-2 bg-blue-500 rounded-full shadow-sm border border-white" 
+                                style={{ top: `${20 + i * 15}%`, left: `${15 + i * 12}%` }} 
+                            />
                         ))}
+                        </AnimatePresence>
 
-                        {/* FITUR BARU 1: Interactive Markers */}
+                        {/* Interactive Markers */}
+                        <AnimatePresence>
                         {incidents.map((inc) => (
                           <motion.div 
                             key={inc.id}
                             className="absolute cursor-pointer z-10 group/marker"
                             style={{ top: `${inc.y}%`, left: `${inc.x}%` }}
-                            initial={{ scale: 0 }} animate={{ scale: 1 }}
-                            onClick={() => setSelectedIncidentId(inc.id)}
+                            initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedIncidentId(inc.id);
+                            }}
                           >
                             <span className="absolute -inset-8 rounded-full bg-red-500/10 animate-ping"></span>
                             <span className="absolute -inset-4 rounded-full bg-red-500/20 animate-pulse"></span>
@@ -312,13 +358,14 @@ export default function FireResponse() {
                                 <Flame size={14} className="text-white fill-white" />
                             </div>
                             
-                            {/* Tooltip */}
+                            {/* Hover Tooltip */}
                             <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-3 py-2 rounded-xl shadow-lg whitespace-nowrap opacity-0 group-hover/marker:opacity-100 transition-opacity z-20 pointer-events-none">
                                 <p className="text-[10px] font-bold uppercase text-red-400">{inc.type}</p>
                                 <p className="text-[10px] text-zinc-300">{inc.loc}</p>
                             </div>
                           </motion.div>
                         ))}
+                        </AnimatePresence>
 
                         {/* SELECTED INCIDENT PANEL (Overlay) */}
                         <AnimatePresence>
@@ -328,6 +375,7 @@ export default function FireResponse() {
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 100, opacity: 0 }}
                             className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-xl p-4 rounded-3xl border border-zinc-200 shadow-xl z-30 flex justify-between items-center"
+                            onClick={(e) => e.stopPropagation()}
                           >
                              <div>
                                 <h4 className="font-bold text-zinc-900">{selectedIncident.type}</h4>
@@ -340,18 +388,18 @@ export default function FireResponse() {
                              <div className="flex gap-2">
                                 <button 
                                   onClick={() => handleResolve(selectedIncident.id)}
-                                  className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold uppercase hover:bg-emerald-100 border border-emerald-100"
+                                  className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold uppercase hover:bg-emerald-100 border border-emerald-100 transition-colors"
                                 >
                                   Resolve
                                 </button>
                                 <button 
                                   onClick={() => handleDispatch(selectedIncident.id)}
                                   disabled={unitsAvailable === 0}
-                                  className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold uppercase hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center gap-2 disabled:opacity-50"
+                                  className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold uppercase hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                                 >
                                   <Truck size={14} /> Dispatch +1
                                 </button>
-                                <button onClick={() => setSelectedIncidentId(null)} className="p-2 hover:bg-zinc-100 rounded-xl">
+                                <button onClick={() => setSelectedIncidentId(null)} className="p-2 hover:bg-zinc-100 rounded-xl transition-colors">
                                   <X size={16} />
                                 </button>
                              </div>
@@ -360,7 +408,7 @@ export default function FireResponse() {
                         </AnimatePresence>
 
                         {/* Legend */}
-                        <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md p-3 rounded-2xl border border-zinc-200 shadow-sm flex gap-4">
+                        <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md p-3 rounded-2xl border border-zinc-200 shadow-sm flex gap-4 pointer-events-none">
                             <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
                                 <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span> Active Fire
                             </div>
@@ -444,7 +492,7 @@ export default function FireResponse() {
                             <div>
                                 <div className="flex justify-between text-xs mb-2">
                                     <span className="text-zinc-400 font-bold uppercase">Fire Trucks</span>
-                                    <span className={`font-bold ${unitsAvailable < 5 ? 'text-red-400' : 'text-emerald-400'}`}>
+                                    <span className={`font-bold transition-colors ${unitsAvailable < 5 ? 'text-red-400' : 'text-emerald-400'}`}>
                                       {unitsAvailable}/{totalUnits} Ready
                                     </span>
                                 </div>
@@ -462,13 +510,13 @@ export default function FireResponse() {
 
                             <div className="grid grid-cols-2 gap-3">
                               <div className="flex flex-col items-center justify-center p-3 bg-white/5 rounded-2xl border border-white/5">
-                                <span className="text-2xl font-bold mb-1">{40 - unitsAvailable}</span>
+                                <span className="text-2xl font-bold mb-1">{totalUnits - unitsAvailable}</span>
                                 <span className="text-[10px] text-zinc-500 uppercase">On Duty</span>
                               </div>
-                              {/* FITUR BARU 5: Quick Restock Button */}
+                              {/* Quick Restock Button */}
                               <button 
                                 onClick={toggleRestock}
-                                className="flex flex-col items-center justify-center p-3 bg-red-600/20 hover:bg-red-600/30 transition-colors rounded-2xl border border-red-500/20 cursor-pointer group"
+                                className="flex flex-col items-center justify-center p-3 bg-red-600/20 hover:bg-red-600/30 transition-colors rounded-2xl border border-red-500/20 cursor-pointer group active:scale-95"
                               >
                                 <span className="text-xs font-bold text-red-400 group-hover:text-red-300 flex items-center gap-1">
                                   <Truck size={12} /> Restock
@@ -506,16 +554,16 @@ export default function FireResponse() {
                     </div>
                     
                     <div className="space-y-4 flex-1 overflow-auto max-h-[400px] pr-2 custom-scrollbar">
-                        <AnimatePresence initial={false}>
+                        <AnimatePresence initial={false} mode="popLayout">
                         {incidents.map((inc) => (
                             <motion.div 
                                 key={inc.id} 
                                 layout
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, height: 0 }}
+                                initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                                animate={{ opacity: 1, x: 0, scale: 1 }}
+                                exit={{ opacity: 0, x: 20, scale: 0.9 }}
                                 onClick={() => setSelectedIncidentId(inc.id)}
-                                className={`flex gap-4 items-start p-3 rounded-2xl transition-colors cursor-pointer group border-l-2 ${selectedIncidentId === inc.id ? 'bg-red-50 border-red-500' : 'hover:bg-zinc-50 border-transparent hover:border-red-200'}`}
+                                className={`flex gap-4 items-start p-3 rounded-2xl transition-all cursor-pointer group border-l-2 ${selectedIncidentId === inc.id ? 'bg-red-50 border-red-500' : 'hover:bg-zinc-50 border-transparent hover:border-red-200'}`}
                             >
                                 <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${
                                     inc.severity === 'high' ? 'bg-red-500 animate-pulse' : 
@@ -529,7 +577,7 @@ export default function FireResponse() {
                                     </div>
                                     <div className="flex justify-between items-center mt-1">
                                         <p className="text-[11px] text-zinc-500 truncate">{inc.loc}</p>
-                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase ${
+                                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border uppercase transition-colors ${
                                             inc.status === 'Responding' ? 'bg-red-50 text-red-600 border-red-100' : 
                                             inc.status === 'Active' ? 'bg-orange-50 text-orange-600 border-orange-100' : 
                                             'bg-zinc-50 text-zinc-500 border-zinc-100'
@@ -538,15 +586,15 @@ export default function FireResponse() {
                                 </div>
                             </motion.div>
                         ))}
-                        {incidents.length === 0 && (
-                          <div className="text-center py-10 text-zinc-400 text-xs italic">
-                            All clear. No active incidents.
-                          </div>
-                        )}
                         </AnimatePresence>
+                        {incidents.length === 0 && (
+                           <motion.div initial={{opacity: 0}} animate={{opacity: 1}} className="text-center py-10 text-zinc-400 text-xs italic">
+                             All clear. No active incidents.
+                           </motion.div>
+                        )}
                     </div>
 
-                    <button className="w-full mt-6 py-3 text-xs font-bold text-zinc-500 bg-zinc-50 border border-zinc-100 rounded-xl hover:bg-zinc-100 transition-colors uppercase tracking-wider flex items-center justify-center gap-2">
+                    <button onClick={() => triggerAlert("Archived logs downloaded.")} className="w-full mt-6 py-3 text-xs font-bold text-zinc-500 bg-zinc-50 border border-zinc-100 rounded-xl hover:bg-zinc-100 transition-colors uppercase tracking-wider flex items-center justify-center gap-2 active:scale-95">
                         <MoreHorizontal size={16} /> View History
                     </button>
                 </div>

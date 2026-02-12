@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Baby, 
@@ -30,10 +30,9 @@ import {
   ResponsiveContainer, XAxis, Tooltip, CartesianGrid 
 } from 'recharts';
 
-// IMPORT PageLayout (Asumsikan path ini benar sesuai project Anda)
 import PageLayout from '../../components/PageLayout'; 
 
-// --- MOCK DATA DATASETS (Dynamic Simulation) ---
+// --- MOCK DATASETS (Dynamic Simulation) ---
 const DATA_SETS = {
   Enrollment: [
     { month: 'Jan', index: 82 }, { month: 'Feb', index: 85 }, { month: 'Mar', index: 88 },
@@ -84,21 +83,11 @@ const PARENTING_MODULES = [
     { id: 2, title: "Positive Parenting", desc: "Behavioral guidance without conflict.", age: "All Ages", time: "1h 20m", cat: "Psych" },
     { id: 3, title: "Digital Exposure Mgmt", desc: "Setting healthy screen time boundaries.", age: "3-12 Yrs", time: "30m", cat: "Lifestyle" },
     { id: 4, title: "Sleep Training 101", desc: "Methods to ensure deep sleep.", age: "0-2 Yrs", time: "50m", cat: "Health" },
+    { id: 5, title: "Motor Skills Development", desc: "Activities to boost physical coordination.", age: "2-5 Yrs", time: "40m", cat: "Health" },
+    { id: 6, title: "Emotional Intelligence", desc: "Helping kids understand their feelings.", age: "4-8 Yrs", time: "55m", cat: "Psych" },
 ];
 
 // --- SUB-COMPONENTS ---
-
-const TrendBadge = ({ value }) => {
-    const isPositive = value > 0;
-    return (
-        <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
-            isPositive ? 'bg-amber-50 text-amber-700' : 'bg-zinc-100 text-zinc-600'
-        }`}>
-            {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {Math.abs(value)}%
-        </div>
-    );
-};
 
 const MetricCard = ({ item, isActive, onClick }) => (
     <motion.div
@@ -135,8 +124,8 @@ const MetricCard = ({ item, isActive, onClick }) => (
                 <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
                     isActive ? 'bg-white/20 text-white' : (item.trend > 0 ? 'bg-amber-50 text-amber-700' : 'bg-zinc-100 text-zinc-600')
                 }`}>
-                     {item.trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                     {Math.abs(item.trend)}%
+                      {item.trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                      {Math.abs(item.trend)}%
                 </div>
             </div>
             <p className={`text-xs font-medium uppercase tracking-wide ${isActive ? 'text-amber-100' : 'text-zinc-500'}`}>
@@ -164,7 +153,7 @@ const UpdateGrowthModal = ({ isOpen, onClose, currentData, onSave }) => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white rounded-[2rem] w-full max-w-sm p-6 shadow-2xl"
+                className="bg-white rounded-[2rem] w-full max-w-sm p-6 shadow-2xl relative"
             >
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-zinc-900">Update Measurements</h3>
@@ -181,7 +170,7 @@ const UpdateGrowthModal = ({ isOpen, onClose, currentData, onSave }) => {
                                 type="number" 
                                 value={height}
                                 onChange={(e) => setHeight(Number(e.target.value))}
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-lg font-bold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-lg font-bold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                             />
                             <Ruler className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400" size={20} />
                         </div>
@@ -193,7 +182,7 @@ const UpdateGrowthModal = ({ isOpen, onClose, currentData, onSave }) => {
                                 type="number" 
                                 value={weight}
                                 onChange={(e) => setWeight(Number(e.target.value))}
-                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-lg font-bold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-4 text-lg font-bold text-zinc-900 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                             />
                             <Activity className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400" size={20} />
                         </div>
@@ -202,7 +191,7 @@ const UpdateGrowthModal = ({ isOpen, onClose, currentData, onSave }) => {
 
                 <button 
                     onClick={() => { onSave(height, weight); onClose(); }}
-                    className="w-full mt-8 bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-amber-500/20"
+                    className="w-full mt-8 bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 rounded-xl transition-colors shadow-lg shadow-amber-500/20 active:scale-95"
                 >
                     Save Records
                 </button>
@@ -215,20 +204,29 @@ const UpdateGrowthModal = ({ isOpen, onClose, currentData, onSave }) => {
 
 export default function ChildDevelopment() {
   // STATE MANAGEMENT
-  const [activeKpi, setActiveKpi] = useState('Enrollment'); // Mengontrol data chart
-  const [timeRange, setTimeRange] = useState('1Y'); // NEW FEATURE 1: Time Range
-  const [searchQuery, setSearchQuery] = useState(''); // NEW FEATURE 4: Search
+  const [activeKpi, setActiveKpi] = useState('Enrollment'); 
+  const [timeRange, setTimeRange] = useState('1Y'); 
+  const [searchQuery, setSearchQuery] = useState(''); 
   const [chartData, setChartData] = useState(DATA_SETS['Enrollment']);
   
   // Growth State
   const [growthData, setGrowthData] = useState({ height: 85, weight: 12 });
   const [isGrowthModalOpen, setIsGrowthModalOpen] = useState(false);
 
-  // NEW FEATURE 3: Daily Milestones State
+  // Wellbeing Score (Dynamic Calculation based on Growth)
+  const wellbeingScore = useMemo(() => {
+     // Simple simulation: base 80 + adjustments based on 'healthy' growth ranges
+     const hScore = Math.min((growthData.height / 120) * 10, 10);
+     const wScore = Math.min((growthData.weight / 30) * 10, 10);
+     return (75 + hScore + wScore).toFixed(1);
+  }, [growthData]);
+
+  // Daily Milestones State
   const [milestones, setMilestones] = useState([
       { id: 1, text: "Morning Vitamin D", done: true },
       { id: 2, text: "Read 2 Books", done: false },
       { id: 3, text: "Sensory Play (30m)", done: false },
+      { id: 4, text: "No Screen Time before 5PM", done: false },
   ]);
 
   // Effect untuk update chart saat KPI atau Time Range berubah
@@ -287,7 +285,7 @@ export default function ChildDevelopment() {
             </div>
 
             {/* Wellbeing Score Widget */}
-            <div className="bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4">
+            <div className="bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
                 <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 border-4 border-white shadow-sm">
                     <Smile size={24} />
                 </div>
@@ -295,12 +293,12 @@ export default function ChildDevelopment() {
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Wellbeing Index</p>
                     <div className="flex items-baseline gap-1">
                         <motion.span 
-                            key={growthData.weight} // Animate when weight changes impact score logically
+                            key={wellbeingScore} // Animate when score changes
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="text-2xl font-bold text-zinc-900"
                         >
-                            92.4
+                            {wellbeingScore}
                         </motion.span>
                         <span className="text-xs text-zinc-400 font-medium">/100</span>
                     </div>
@@ -338,7 +336,7 @@ export default function ChildDevelopment() {
                             </p>
                         </div>
                         
-                        {/* NEW FEATURE 1: Time Range Selector */}
+                        {/* Time Range Selector */}
                         <div className="flex bg-zinc-100 rounded-full p-1 border border-zinc-200">
                             {['6M', '1Y'].map((range) => (
                                 <button
@@ -434,8 +432,7 @@ export default function ChildDevelopment() {
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <span className="text-[10px] font-bold text-zinc-400 uppercase">Child</span>
-                                <div className="text-xl font-bold text-zinc-900">Pop.</div>
+                                <span className="text-[10px] font-bold text-zinc-400 uppercase text-center">Child<br/>Pop.</span>
                             </div>
                         </div>
                         
@@ -449,11 +446,11 @@ export default function ChildDevelopment() {
                 </div>
 
                 {/* Modules List (FILTERABLE) */}
-                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm">
+                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm min-h-[400px]">
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 px-2 gap-4">
                         <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Parenting Modules</h3>
                         
-                        {/* NEW FEATURE 4: Search Bar */}
+                        {/* Search Bar */}
                         <div className="relative w-full md:w-64 group">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-amber-500 transition-colors" size={16} />
                             <input 
@@ -467,12 +464,14 @@ export default function ChildDevelopment() {
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <AnimatePresence>
                         {filteredModules.length > 0 ? (
                             filteredModules.map((mod, i) => (
                                 <motion.div 
                                     layout
                                     initial={{ opacity: 0, scale: 0.9 }}
                                     animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
                                     key={mod.id} 
                                     className="group bg-zinc-50 hover:bg-white border border-zinc-100 hover:border-amber-200 p-4 rounded-2xl transition-all cursor-pointer flex flex-col justify-between"
                                 >
@@ -499,6 +498,7 @@ export default function ChildDevelopment() {
                                 No modules found matching "{searchQuery}"
                             </div>
                         )}
+                        </AnimatePresence>
                     </div>
                 </div>
 
@@ -522,7 +522,7 @@ export default function ChildDevelopment() {
                         {/* Edit Button */}
                         <button 
                             onClick={() => setIsGrowthModalOpen(true)}
-                            className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-amber-500 hover:text-white flex items-center justify-center text-zinc-400 transition-colors"
+                            className="w-8 h-8 rounded-full bg-zinc-50 hover:bg-amber-500 hover:text-white flex items-center justify-center text-zinc-400 transition-colors active:scale-95"
                         >
                             <Plus size={16} />
                         </button>
@@ -538,7 +538,8 @@ export default function ChildDevelopment() {
                             <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
                                 <motion.div 
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${(growthData.height / 120) * 100}%` }}
+                                    animate={{ width: `${Math.min((growthData.height / 120) * 100, 100)}%` }}
+                                    transition={{ duration: 1 }}
                                     className="h-full bg-amber-500 rounded-full" 
                                 />
                             </div>
@@ -552,7 +553,8 @@ export default function ChildDevelopment() {
                             <div className="h-2 w-full bg-zinc-100 rounded-full overflow-hidden">
                                 <motion.div 
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${(growthData.weight / 30) * 100}%` }}
+                                    animate={{ width: `${Math.min((growthData.weight / 30) * 100, 100)}%` }}
+                                    transition={{ duration: 1 }}
                                     className="h-full bg-amber-300 rounded-full" 
                                 />
                             </div>
@@ -572,23 +574,26 @@ export default function ChildDevelopment() {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-200/20 rounded-full blur-3xl pointer-events-none"></div>
                 </div>
 
-                {/* NEW FEATURE 3: DAILY MILESTONES (Widget Baru) */}
+                {/* DAILY MILESTONES (INTERACTIVE) */}
                 <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-bold text-sm text-zinc-900">Daily Checklist</h3>
-                        <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${
+                            milestones.every(m => m.done) ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                        }`}>
                             {milestones.filter(m => m.done).length}/{milestones.length}
                         </span>
                     </div>
                     <div className="space-y-2">
                         {milestones.map((item) => (
-                            <div 
+                            <motion.div 
                                 key={item.id}
+                                layout
                                 onClick={() => toggleMilestone(item.id)} 
-                                className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all ${
+                                className={`p-3 rounded-xl border flex items-center gap-3 cursor-pointer transition-all select-none ${
                                     item.done 
                                     ? 'bg-amber-50 border-amber-200' 
-                                    : 'bg-white border-zinc-100 hover:border-zinc-200'
+                                    : 'bg-white border-zinc-100 hover:border-zinc-200 hover:bg-zinc-50'
                                 }`}
                             >
                                 <div className={`w-5 h-5 rounded-full flex items-center justify-center border transition-colors ${
@@ -596,10 +601,10 @@ export default function ChildDevelopment() {
                                 }`}>
                                     {item.done && <CheckCircle2 size={12} />}
                                 </div>
-                                <span className={`text-xs font-medium ${item.done ? 'text-amber-900 line-through decoration-amber-300' : 'text-zinc-600'}`}>
+                                <span className={`text-xs font-medium transition-colors ${item.done ? 'text-amber-900 line-through decoration-amber-300' : 'text-zinc-600'}`}>
                                     {item.text}
                                 </span>
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 </div>
@@ -635,7 +640,7 @@ export default function ChildDevelopment() {
             </div>
         </div>
 
-        {/* NEW FEATURE 5: FLOATING QUICK ACTIONS */}
+        {/* FLOATING QUICK ACTIONS */}
         <div className="fixed bottom-8 right-8 flex flex-col gap-3 z-40">
             <motion.button 
                 whileHover={{ scale: 1.1 }}
