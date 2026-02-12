@@ -262,10 +262,10 @@ const TrafficPage = () => {
 
     return (
         <PageLayout title="Traffic Control" subtitle="Dual Monitor" colorTheme="neutral">
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4 md:gap-6">
                 
-                {/* Stats Row */}
-                <div className="grid grid-cols-4 gap-4">
+                {/* Stats Row - Responsive Grid: 2 kolom di mobile, 4 di desktop */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                     <StatCard 
                         label="Congestion" 
                         value={congestionLevel} 
@@ -297,12 +297,13 @@ const TrafficPage = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Content Grid - Stacking di mobile */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                     {/* LEFT COLUMN: Camera Feeds */}
                     <div className="lg:col-span-2 space-y-4">
                         
-                        {/* 1. DUAL PLAYER UTAMA (GRID 2 KOLOM) */}
-                        <div className="grid grid-cols-2 gap-4">
+                        {/* 1. DUAL PLAYER UTAMA - Stacking di mobile, 2 kolom di tablet/desktop */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {activeSlots.map((cam, index) => (
                                 <div key={index} className="relative transition-all duration-300">
                                      {/* Indikator Nomor Slot */}

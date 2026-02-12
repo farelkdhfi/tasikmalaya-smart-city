@@ -32,7 +32,7 @@ export const SECTION_DATA = {
         title: "Security & Safety",
         subtitle: "Services",
         items: [
-            { img: "https://images.unsplash.com/photo-1555617766-c94804975da3?q=80&w=2070&auto=format&fit=crop", link: '/traffic', label: 'Traffic AI', icon: Ticket, span: 'col-span-1 md:col-span-2' },
+            { img: "https://images.unsplash.com/photo-1555617766-c94804975da3?q=80&w=2070&auto=format&fit=crop", link: '/traffic', label: 'Traffic CCTV', icon: Ticket, span: 'col-span-1 md:col-span-2' },
             { img: "https://images.unsplash.com/photo-1495542779398-9fec7dc796dd?q=80&w=1978&auto=format&fit=crop", link: '/child-protection', label: 'Child Safety', icon: Shield, span: 'col-span-1 md:col-span-1 md:row-span-2' },
             { img: "https://images.unsplash.com/photo-1582139329536-e7284fece509?q=80&w=2000&auto=format&fit=crop", link: '/police-call-center', label: 'Police Center', icon: Phone, span: 'col-span-1 md:col-span-1' },
             { img: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=2070&auto=format&fit=crop", link: '/fireman-call-center', label: 'Fire Response', icon: Flame, span: 'col-span-1 md:col-span-2' },

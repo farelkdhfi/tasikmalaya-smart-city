@@ -65,7 +65,7 @@ const TrendBadge = ({ value, inverse = false }) => {
     }
     
     return (
-        <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${colorClass}`}>
+        <div className={`flex items-center gap-1 text-[10px] md:text-xs font-medium px-2 py-1 rounded-full ${colorClass}`}>
             {value === 0 ? <Activity size={12} /> : (isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />)}
             {Math.abs(value)}%
         </div>
@@ -75,27 +75,29 @@ const TrendBadge = ({ value, inverse = false }) => {
 const MetricCard = ({ item }) => (
     <motion.div
         layout
-        className="bg-white rounded-3xl p-5 h-48 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 border border-zinc-100 transition-all duration-300 group relative overflow-hidden"
+        // RESPONSIVE: Height & Padding adjustments
+        className="bg-white rounded-3xl p-4 md:p-5 h-40 md:h-48 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 border border-zinc-100 transition-all duration-300 group relative overflow-hidden"
     >
         <div className="flex justify-between items-start z-10">
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 bg-zinc-50 text-zinc-900 group-hover:bg-indigo-600 group-hover:text-white`}>
-                <item.icon size={20} />
+            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 bg-zinc-50 text-zinc-900 group-hover:bg-indigo-600 group-hover:text-white`}>
+                <item.icon size={18} className="md:w-5 md:h-5" />
             </div>
-            <div className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-indigo-600 transition-colors">
-                <ArrowUpRight size={14} />
+            <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-indigo-600 transition-colors">
+                <ArrowUpRight size={12} className="md:w-[14px]" />
             </div>
         </div>
         <div className="z-10 mt-auto">
             <div className="flex justify-between items-end mb-1">
-                <h3 className="text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">
+                {/* RESPONSIVE: Text size */}
+                <h3 className="text-2xl md:text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-indigo-600 transition-colors">
                     {item.value}
                 </h3>
                 <TrendBadge value={item.trend} inverse={item.label.includes('Incidents') || item.label.includes('Risk') || item.label.includes('Attempts')} />
             </div>
-            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">{item.label}</p>
+            <p className="text-[10px] md:text-xs text-zinc-500 font-medium uppercase tracking-wide truncate">{item.label}</p>
         </div>
         <div className="absolute -right-4 -bottom-4 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none">
-            <item.icon size={100} />
+            <item.icon size={80} className="md:w-[100px] md:h-[100px]" />
         </div>
     </motion.div>
 );
@@ -196,27 +198,28 @@ export default function CyberSecurity() {
         colorTheme="blue"
     >
         {/* HEADER CONTROLS */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-            <div className="flex items-center gap-3">
+        {/* RESPONSIVE: Stack vertical on mobile, row on desktop */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="flex flex-wrap items-center gap-3">
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-indigo-200 shadow-sm">
                     <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
-                    <span className="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Live Protection Active</span>
+                    <span className="text-[10px] md:text-xs font-semibold text-indigo-700 uppercase tracking-wide">Live Protection Active</span>
                 </div>
                 
                 {/* FEATURE 3: THREAT LEVEL INDICATOR */}
                 <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors duration-500 ${threatLevel === 'DEFCON 2' ? 'bg-rose-100 border-rose-200 text-rose-700' : threatLevel === 'DEFCON 1' ? 'bg-red-600 border-red-700 text-white animate-pulse' : 'bg-emerald-100 border-emerald-200 text-emerald-700'}`}>
                     <Activity size={14} />
-                    <span className="text-xs font-bold uppercase">{threatLevel}</span>
+                    <span className="text-[10px] md:text-xs font-bold uppercase">{threatLevel}</span>
                 </div>
             </div>
             
             {/* System Check Time */}
-            <span className="text-xs text-zinc-400 font-mono">Sys Check: {new Date().toLocaleTimeString()}</span>
+            <span className="text-[10px] md:text-xs text-zinc-400 font-mono">Sys Check: {new Date().toLocaleTimeString()}</span>
         </div>
 
         {/* KPI SECTION */}
-        <section className="mb-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="mb-6 md:mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {kpiData.map((kpi) => (
                     <MetricCard key={kpi.id} item={{...kpi, value: kpi.label === 'Account Health' ? `${kpi.value}%` : kpi.value.toLocaleString()}} />
                 ))}
@@ -224,26 +227,27 @@ export default function CyberSecurity() {
         </section>
 
         {/* MAIN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* RESPONSIVE: 1 Col on mobile, 12 cols on Desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
             
             {/* LEFT: DATA VISUALIZATION (8 Cols) */}
-            <div className="lg:col-span-8 flex flex-col gap-8">
+            <div className="lg:col-span-8 flex flex-col gap-6 md:gap-8">
                 
                 {/* Main Threat Chart */}
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-zinc-200">
-                    <div className="flex justify-between items-center mb-8">
+                <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8 shadow-sm border border-zinc-200">
+                    <div className="flex justify-between items-center mb-6 md:mb-8">
                         <div>
-                            <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Traffic Anomaly</h3>
-                            <p className="text-xs text-zinc-500 uppercase tracking-wide">Inbound Packet Analysis</p>
+                            <h3 className="text-base md:text-lg font-bold text-zinc-900 tracking-tight">Traffic Anomaly</h3>
+                            <p className="text-[10px] md:text-xs text-zinc-500 uppercase tracking-wide">Inbound Packet Analysis</p>
                         </div>
                         {/* FEATURE 4: RADAR ANIMATION */}
-                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full text-indigo-700 text-xs font-bold relative overflow-hidden border border-indigo-100">
+                        <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 rounded-full text-indigo-700 text-[10px] md:text-xs font-bold relative overflow-hidden border border-indigo-100">
                             <Radar size={14} className={scanning ? "animate-spin" : ""} /> 
                             <span>Scanning...</span>
                         </div>
                     </div>
                     
-                    <div className="h-[280px] w-full">
+                    <div className="h-[200px] md:h-[280px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={trendData}>
                                 <defs>
@@ -273,15 +277,15 @@ export default function CyberSecurity() {
                 </div>
 
                 {/* Secondary Charts Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     
                     {/* Incident Types Bar */}
-                    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-200">
-                        <div className="flex items-center gap-2 mb-6">
+                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm border border-zinc-200">
+                        <div className="flex items-center gap-2 mb-4 md:mb-6">
                             <Activity size={16} className="text-indigo-500" />
                             <h4 className="text-sm font-bold text-zinc-900">Incident Breakdown</h4>
                         </div>
-                        <div className="h-48">
+                        <div className="h-40 md:h-48">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={INCIDENT_TYPES} layout="vertical">
                                     <XAxis type="number" hide />
@@ -298,16 +302,16 @@ export default function CyberSecurity() {
                     </div>
 
                     {/* FEATURE 2: SERVER STATUS GRID */}
-                    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-200">
-                        <div className="flex items-center gap-2 mb-6">
+                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm border border-zinc-200">
+                        <div className="flex items-center gap-2 mb-4 md:mb-6">
                             <Server size={16} className="text-indigo-500" />
                             <h4 className="text-sm font-bold text-zinc-900">Infrastructure Health</h4>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             {serverStatus.map((srv, i) => (
                                 <div key={i} className="p-3 bg-zinc-50 rounded-xl border border-zinc-100 flex items-center justify-between">
-                                    <span className="text-xs font-medium text-zinc-600">{srv.name}</span>
-                                    <div className={`w-2 h-2 rounded-full ${srv.status === 'ok' ? 'bg-emerald-500' : 'bg-orange-500 animate-pulse'}`}></div>
+                                    <span className="text-[10px] md:text-xs font-medium text-zinc-600 truncate mr-2">{srv.name}</span>
+                                    <div className={`w-2 h-2 rounded-full shrink-0 ${srv.status === 'ok' ? 'bg-emerald-500' : 'bg-orange-500 animate-pulse'}`}></div>
                                 </div>
                             ))}
                         </div>
@@ -322,10 +326,10 @@ export default function CyberSecurity() {
             </div>
 
             {/* RIGHT: MONITOR & LOGS (4 Cols) */}
-            <div className="lg:col-span-4 flex flex-col gap-6">
+            <div className="lg:col-span-4 flex flex-col gap-4 md:gap-6">
                 
                 {/* FEATURE 1: LIVE TERMINAL */}
-                <div className="bg-zinc-950 text-green-500 rounded-[2.5rem] p-6 shadow-xl relative overflow-hidden font-mono text-xs border border-zinc-800">
+                <div className="bg-zinc-950 text-green-500 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-xl relative overflow-hidden font-mono text-[10px] md:text-xs border border-zinc-800">
                     <div className="flex items-center gap-2 mb-4 border-b border-zinc-800 pb-2">
                         <Terminal size={14} />
                         <span className="font-bold">SIEM_CONSOLE_V4</span>
@@ -353,7 +357,7 @@ export default function CyberSecurity() {
                 </div>
 
                 {/* FEATURE 5: QUICK ACTIONS */}
-                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm">
+                <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm">
                     <h4 className="font-bold text-zinc-900 mb-4 text-sm">Quick Response</h4>
                     <div className="space-y-3">
                         <button 
@@ -361,7 +365,7 @@ export default function CyberSecurity() {
                             disabled={actionLoading}
                             className={`w-full py-3 px-4 bg-rose-50 text-rose-700 hover:bg-rose-100 rounded-xl flex items-center justify-between transition-colors group ${actionLoading && 'opacity-50 cursor-not-allowed'}`}
                         >
-                            <span className="text-xs font-bold uppercase flex items-center gap-2">
+                            <span className="text-[10px] md:text-xs font-bold uppercase flex items-center gap-2">
                                 <Lock size={14} /> Global Lockdown
                             </span>
                             {actionLoading === 'Lockdown Protocol' ? <div className="w-4 h-4 border-2 border-rose-500 border-t-transparent rounded-full animate-spin"/> : <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>}
@@ -371,7 +375,7 @@ export default function CyberSecurity() {
                             disabled={actionLoading}
                             className={`w-full py-3 px-4 bg-zinc-50 text-zinc-700 hover:bg-zinc-100 rounded-xl flex items-center justify-between transition-colors group ${actionLoading && 'opacity-50 cursor-not-allowed'}`}
                         >
-                            <span className="text-xs font-bold uppercase flex items-center gap-2">
+                            <span className="text-[10px] md:text-xs font-bold uppercase flex items-center gap-2">
                                 <Zap size={14} /> Flush DNS
                             </span>
                             {actionLoading === 'Flush DNS Cache' ? <div className="w-4 h-4 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin"/> : <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>}
@@ -380,13 +384,13 @@ export default function CyberSecurity() {
                 </div>
 
                 {/* Incident Log */}
-                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm flex-1">
-                    <div className="flex items-center justify-between mb-6 px-2">
-                        <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Recent Logs</h3>
+                <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm flex-1">
+                    <div className="flex items-center justify-between mb-4 md:mb-6 px-1">
+                        <h3 className="text-base md:text-lg font-bold text-zinc-900 tracking-tight">Recent Logs</h3>
                         <div className="w-2 h-2 bg-indigo-500 rounded-full animate-ping"></div>
                     </div>
                     
-                    <div className="space-y-4 max-h-[400px] overflow-hidden">
+                    <div className="space-y-3 md:space-y-4 max-h-[300px] md:max-h-[400px] overflow-hidden">
                         <AnimatePresence initial={false}>
                         {incidents.map((inc) => (
                             <motion.div 
@@ -395,19 +399,19 @@ export default function CyberSecurity() {
                                 initial={{ opacity: 0, scale: 0.95, y: -20 }}
                                 animate={{ opacity: 1, scale: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className="flex gap-4 items-start p-2 hover:bg-zinc-50 rounded-2xl transition-colors cursor-pointer group"
+                                className="flex gap-3 md:gap-4 items-start p-2 hover:bg-zinc-50 rounded-2xl transition-colors cursor-pointer group"
                             >
-                                <div className={`p-2.5 rounded-xl mt-0.5 shrink-0 transition-colors ${
+                                <div className={`p-2 md:p-2.5 rounded-xl mt-0.5 shrink-0 transition-colors ${
                                     inc.severity === 'High' ? 'bg-rose-50 text-rose-500' : 'bg-orange-50 text-orange-500'
                                 }`}>
-                                    {inc.severity === 'High' ? <AlertTriangle size={16} /> : <Shield size={16} />}
+                                    {inc.severity === 'High' ? <AlertTriangle size={14} className="md:w-4 md:h-4" /> : <Shield size={14} className="md:w-4 md:h-4" />}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-start">
-                                        <p className="text-sm font-bold text-zinc-900 truncate">{inc.type}</p>
-                                        <span className="text-[10px] text-zinc-400 whitespace-nowrap ml-2">{inc.time}</span>
+                                        <p className="text-xs md:text-sm font-bold text-zinc-900 truncate">{inc.type}</p>
+                                        <span className="text-[9px] md:text-[10px] text-zinc-400 whitespace-nowrap ml-2">{inc.time}</span>
                                     </div>
-                                    <p className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-1">
+                                    <p className="text-[10px] md:text-[11px] text-zinc-500 mt-0.5 flex items-center gap-1 truncate">
                                         <Server size={10} /> {inc.source}
                                     </p>
                                 </div>

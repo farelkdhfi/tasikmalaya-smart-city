@@ -78,7 +78,7 @@ const TrendBadge = ({ value, invert = false }) => {
     const isGood = invert ? !isPositive : isPositive;
     
     return (
-        <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+        <div className={`flex items-center gap-1 text-[10px] md:text-xs font-medium px-2 py-1 rounded-full ${
             isGood ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
         }`}>
             {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
@@ -91,27 +91,29 @@ const MetricCard = ({ item }) => (
     <motion.div
         layout
         whileHover={{ y: -4, scale: 1.02 }}
-        className="bg-white rounded-3xl p-5 h-48 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-blue-500/5 border border-zinc-100 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+        // RESPONSIVE: Adaptive height and padding
+        className="bg-white rounded-3xl p-4 md:p-5 h-40 md:h-48 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-blue-500/5 border border-zinc-100 transition-all duration-300 group cursor-pointer relative overflow-hidden"
     >
         <div className="flex justify-between items-start z-10">
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 bg-zinc-50 text-zinc-900 group-hover:bg-blue-600 group-hover:text-white`}>
-                <item.icon size={20} />
+            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 bg-zinc-50 text-zinc-900 group-hover:bg-blue-600 group-hover:text-white`}>
+                <item.icon size={18} className="md:w-5 md:h-5" />
             </div>
-            <div className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-blue-600 transition-colors">
-                <ArrowRight size={14} className="-rotate-45" />
+            <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-blue-600 transition-colors">
+                <ArrowRight size={12} className="-rotate-45 md:w-3.5 md:h-3.5" />
             </div>
         </div>
         <div className="z-10 mt-auto">
             <div className="flex justify-between items-end mb-1">
-                <h3 className="text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors">
+                {/* RESPONSIVE: Dynamic Font Size */}
+                <h3 className="text-2xl md:text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors">
                     {item.value}
                 </h3>
                 <TrendBadge value={item.trend} invert={item.label.includes('Alerts') || item.label.includes('Incidents')} />
             </div>
-            <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">{item.label}</p>
+            <p className="text-[10px] md:text-xs text-zinc-500 font-medium uppercase tracking-wide truncate">{item.label}</p>
         </div>
         <div className="absolute -right-4 -bottom-4 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none">
-            <item.icon size={100} />
+            <item.icon size={80} className="md:w-[100px] md:h-[100px]" />
         </div>
     </motion.div>
 );
@@ -273,22 +275,23 @@ export default function ChildSafety() {
             <div className={`transition-all duration-500 ${broadcastMode ? 'ring-4 ring-rose-500/20 rounded-[3rem] p-2' : ''}`}>
             
             {/* HEADER CONTROLS */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+            {/* RESPONSIVE: Stack vertical on mobile, row on desktop */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 mb-6 md:mb-8">
                 <div className="flex items-center gap-3">
                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border shadow-sm transition-colors ${broadcastMode ? 'bg-rose-600 border-rose-700 text-white' : 'bg-white border-blue-200'}`}>
                         <div className={`w-2 h-2 rounded-full animate-pulse ${broadcastMode ? 'bg-white' : 'bg-blue-500'}`}></div>
-                        <span className={`text-xs font-semibold uppercase tracking-wide ${broadcastMode ? 'text-white' : 'text-blue-700'}`}>
+                        <span className={`text-[10px] md:text-xs font-semibold uppercase tracking-wide ${broadcastMode ? 'text-white' : 'text-blue-700'}`}>
                             {broadcastMode ? 'EMERGENCY MODE' : 'Safe Zones Active'}
                         </span>
                     </div>
-                    <span className="text-xs text-zinc-400 font-mono">Synced: {currentTime.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit', second:'2-digit'})} WIB</span>
+                    <span className="text-[10px] md:text-xs text-zinc-400 font-mono">Synced: {currentTime.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit', second:'2-digit'})} WIB</span>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                     {/* NEW FEATURE 1: Emergency Broadcast */}
                     <button 
                         onClick={() => setBroadcastMode(!broadcastMode)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow-md active:scale-95 ${
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-full border text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all shadow-sm hover:shadow-md active:scale-95 ${
                             broadcastMode 
                             ? 'bg-rose-100 text-rose-600 border-rose-200 animate-pulse' 
                             : 'bg-white text-zinc-500 border-zinc-200 hover:border-rose-200 hover:text-rose-500'
@@ -301,16 +304,16 @@ export default function ChildSafety() {
                     {/* EXISTING: Monitored Schools Widget */}
                     <div 
                         onClick={() => setSchoolStatsOpen(!schoolStatsOpen)}
-                        className={`p-2 pr-6 rounded-[2rem] border shadow-sm flex items-center gap-4 cursor-pointer transition-all hover:bg-zinc-50 ${schoolStatsOpen ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-100' : 'bg-white border-zinc-200'}`}
+                        className={`flex-1 md:flex-none p-2 pr-4 md:pr-6 rounded-[2rem] border shadow-sm flex items-center justify-center md:justify-start gap-4 cursor-pointer transition-all hover:bg-zinc-50 ${schoolStatsOpen ? 'bg-blue-50 border-blue-200 ring-2 ring-blue-100' : 'bg-white border-zinc-200'}`}
                     >
-                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border-4 border-white shadow-sm">
-                            <School size={20} />
+                        <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 border-4 border-white shadow-sm shrink-0">
+                            <School size={18} className="md:w-5 md:h-5" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Monitored Schools</p>
+                            <p className="text-[9px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Monitored Schools</p>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-2xl font-bold text-zinc-900">412</span>
-                                <span className="text-xs text-zinc-400 font-medium">Institutions</span>
+                                <span className="text-xl md:text-2xl font-bold text-zinc-900">412</span>
+                                <span className="text-[10px] md:text-xs text-zinc-400 font-medium">Institutions</span>
                                 <motion.div 
                                     animate={{ rotate: schoolStatsOpen ? 180 : 0 }}
                                     className="ml-1"
@@ -332,12 +335,12 @@ export default function ChildSafety() {
                         exit={{ height: 0, opacity: 0, marginBottom: 0 }}
                         className="overflow-hidden bg-blue-50 rounded-3xl border border-blue-100 shadow-inner"
                     >
-                        <div className="p-4 flex justify-between items-center text-sm text-blue-800">
+                        <div className="p-4 flex flex-col sm:flex-row justify-between items-center text-xs md:text-sm text-blue-800 gap-2 sm:gap-0">
                             <div className="flex items-center gap-2">
                                 <Activity size={16} />
                                 <span className="font-bold ml-2">School Server Status Detail</span>
                             </div>
-                            <div className="flex gap-6">
+                            <div className="flex gap-4 md:gap-6">
                                 <span className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500"></div> Online: <b>408</b></span>
                                 <span className="flex items-center gap-1.5 text-amber-700"><div className="w-2 h-2 rounded-full bg-amber-500"></div> Maintenance: <b>4</b></span>
                             </div>
@@ -347,8 +350,8 @@ export default function ChildSafety() {
             </AnimatePresence>
 
             {/* KPI SECTION */}
-            <section className="mb-8">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <section className="mb-6 md:mb-8">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                     {kpiData.map((kpi) => (
                         <MetricCard key={kpi.id} item={kpi} />
                     ))}
@@ -356,26 +359,27 @@ export default function ChildSafety() {
             </section>
 
             {/* MAIN GRID */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* RESPONSIVE: 1 col mobile, 12 cols desktop */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
                 
                 {/* LEFT: MAP & ANALYTICS (8 Cols) */}
-                <div className="lg:col-span-8 flex flex-col gap-8">
+                <div className="lg:col-span-8 flex flex-col gap-6 md:gap-8">
                     
                     {/* Safe Zone Map (Interactive) */}
-                    <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-zinc-200 relative overflow-hidden h-[450px] group">
+                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-2 shadow-sm border border-zinc-200 relative overflow-hidden h-[400px] md:h-[450px] group">
                           {/* Map Container */}
-                          <div className="w-full h-full rounded-[2rem] bg-zinc-100 relative overflow-hidden">
+                          <div className="w-full h-full rounded-[1.5rem] md:rounded-[2rem] bg-zinc-100 relative overflow-hidden">
                             <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(to_right,#000000_1px,transparent_1px),linear-gradient(to_bottom,#000000_1px,transparent_1px)] bg-[size:40px_40px]"></div>
                             
                             {/* Map Overlay Text */}
-                            <div className="absolute top-6 left-6 z-20 pointer-events-none">
-                                <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-zinc-200 shadow-sm pointer-events-auto">
-                                    <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
-                                        <ShieldCheck size={16} className="text-blue-600" /> Safe Zone Intel
+                            <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20 pointer-events-none">
+                                <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-2xl border border-zinc-200 shadow-sm pointer-events-auto">
+                                    <h3 className="text-xs md:text-sm font-bold text-zinc-900 flex items-center gap-2">
+                                        <ShieldCheck size={14} className="md:w-4 md:h-4 text-blue-600" /> Safe Zone Intel
                                     </h3>
-                                    <div className="mt-2 space-y-1">
-                                        <div className="flex items-center gap-2 text-[10px] font-medium text-zinc-600"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Secure: 382</div>
-                                        <div className="flex items-center gap-2 text-[10px] font-medium text-zinc-600"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Warning: 28</div>
+                                    <div className="mt-1 md:mt-2 space-y-0.5 md:space-y-1">
+                                        <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-medium text-zinc-600"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Secure: 382</div>
+                                        <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-medium text-zinc-600"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Warning: 28</div>
                                     </div>
                                 </div>
                             </div>
@@ -387,21 +391,21 @@ export default function ChildSafety() {
                                         initial={{ x: 20, opacity: 0 }}
                                         animate={{ x: 0, opacity: 1 }}
                                         exit={{ x: 20, opacity: 0 }}
-                                        className="absolute top-6 right-6 z-30 w-56 bg-white/95 backdrop-blur-md p-4 rounded-2xl border border-zinc-200 shadow-xl"
+                                        className="absolute top-4 right-4 md:top-6 md:right-6 z-30 w-48 md:w-56 bg-white/95 backdrop-blur-md p-3 md:p-4 rounded-2xl border border-zinc-200 shadow-xl"
                                     >
-                                        <div className="flex justify-between items-start mb-3">
-                                            <h4 className="font-bold text-sm text-zinc-900">{selectedZone}</h4>
-                                            <button onClick={() => setSelectedZone(null)} className="text-zinc-400 hover:text-zinc-900 transition-colors bg-zinc-100 w-6 h-6 rounded-full flex items-center justify-center">&times;</button>
+                                        <div className="flex justify-between items-start mb-2 md:mb-3">
+                                            <h4 className="font-bold text-xs md:text-sm text-zinc-900">{selectedZone}</h4>
+                                            <button onClick={() => setSelectedZone(null)} className="text-zinc-400 hover:text-zinc-900 transition-colors bg-zinc-100 w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center">&times;</button>
                                         </div>
-                                        <div className="space-y-3">
+                                        <div className="space-y-2 md:space-y-3">
                                             <div className="grid grid-cols-2 gap-2">
-                                                <div className="bg-zinc-50 p-2 rounded-xl border border-zinc-100">
-                                                    <span className="text-[9px] text-zinc-400 block uppercase">Density</span>
-                                                    <span className="text-xs font-bold text-zinc-700">Low</span>
+                                                <div className="bg-zinc-50 p-1.5 md:p-2 rounded-xl border border-zinc-100">
+                                                    <span className="text-[8px] md:text-[9px] text-zinc-400 block uppercase">Density</span>
+                                                    <span className="text-[10px] md:text-xs font-bold text-zinc-700">Low</span>
                                                 </div>
-                                                <div className="bg-zinc-50 p-2 rounded-xl border border-zinc-100">
-                                                    <span className="text-[9px] text-zinc-400 block uppercase">Patrols</span>
-                                                    <span className="text-xs font-bold text-emerald-600">Active</span>
+                                                <div className="bg-zinc-50 p-1.5 md:p-2 rounded-xl border border-zinc-100">
+                                                    <span className="text-[8px] md:text-[9px] text-zinc-400 block uppercase">Patrols</span>
+                                                    <span className="text-[10px] md:text-xs font-bold text-emerald-600">Active</span>
                                                 </div>
                                             </div>
                                             
@@ -440,7 +444,7 @@ export default function ChildSafety() {
                                 {/* Zone 1 */}
                                 <button 
                                     onClick={() => handleZoneClick('Zone A - North')}
-                                    className={`absolute top-1/3 left-1/3 w-24 h-24 rounded-full border-2 transition-all flex items-center justify-center group/zone focus:outline-none ${
+                                    className={`absolute top-1/3 left-1/3 w-20 h-20 md:w-24 md:h-24 rounded-full border-2 transition-all flex items-center justify-center group/zone focus:outline-none ${
                                         selectedZone === 'Zone A - North' 
                                         ? 'border-emerald-500 bg-emerald-500/20 scale-110' 
                                         : 'border-emerald-400/50 bg-emerald-400/10 hover:bg-emerald-400/20'
@@ -454,21 +458,21 @@ export default function ChildSafety() {
                                 {/* Zone 2 */}
                                 <button 
                                     onClick={() => handleZoneClick('Zone B - Central')}
-                                    className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rounded-full border transition-all flex items-center justify-center group/zone focus:outline-none ${
+                                    className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 md:w-48 md:h-48 rounded-full border transition-all flex items-center justify-center group/zone focus:outline-none ${
                                         selectedZone === 'Zone B - Central'
                                         ? 'border-blue-500 bg-blue-500/10 scale-105'
                                         : 'border-blue-300 bg-blue-500/5 hover:bg-blue-500/10'
                                     }`}
                                 >
-                                    <div className={`w-4 h-4 rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center transition-colors ${selectedZone === 'Zone B - Central' ? 'bg-blue-700' : 'bg-blue-600'}`}>
-                                        <School size={10} className="text-white mx-auto mt-0.5" />
+                                    <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full shadow-lg shadow-blue-500/30 flex items-center justify-center transition-colors ${selectedZone === 'Zone B - Central' ? 'bg-blue-700' : 'bg-blue-600'}`}>
+                                        <School size={8} className="md:w-2.5 md:h-2.5 text-white mx-auto mt-0.5" />
                                     </div>
                                 </button>
 
                                 {/* Zone 3 (Alert) */}
                                 <button 
                                     onClick={() => handleZoneClick('Zone C - East (Warning)')}
-                                    className={`absolute bottom-1/4 right-1/3 w-16 h-16 rounded-full border-2 transition-all flex items-center justify-center group/zone focus:outline-none ${
+                                    className={`absolute bottom-1/4 right-1/3 w-14 h-14 md:w-16 md:h-16 rounded-full border-2 transition-all flex items-center justify-center group/zone focus:outline-none ${
                                         selectedZone === 'Zone C - East (Warning)'
                                         ? 'border-amber-500 bg-amber-500/20 scale-110'
                                         : 'border-amber-400/50 bg-amber-400/10 hover:bg-amber-400/20'
@@ -482,11 +486,11 @@ export default function ChildSafety() {
                     </div>
 
                     {/* Analytics Row */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                         
                         {/* Incident Trend (With NEW FEATURES 2 & 3) */}
-                        <div className="bg-white p-6 rounded-[2.5rem] border border-zinc-200 shadow-sm">
-                            <div className="flex justify-between items-start mb-6">
+                        <div className="bg-white p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-200 shadow-sm">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6">
                                 <div>
                                     <h3 className="font-bold text-sm text-zinc-900">Incident Trend</h3>
                                     <div className="flex items-center gap-2 mt-1">
@@ -500,7 +504,7 @@ export default function ChildSafety() {
                                     </div>
                                 </div>
                                 {/* NEW FEATURE 2: Timeframe Selector */}
-                                <div className="flex bg-zinc-100 rounded-lg p-1">
+                                <div className="flex bg-zinc-100 rounded-lg p-1 self-start sm:self-auto">
                                     {['Week', 'Month'].map(t => (
                                         <button 
                                             key={t}
@@ -535,7 +539,7 @@ export default function ChildSafety() {
                         </div>
 
                         {/* Incident Types */}
-                        <div className="bg-white p-6 rounded-[2.5rem] border border-zinc-200 shadow-sm">
+                        <div className="bg-white p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-200 shadow-sm">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-sm text-zinc-900">Type Breakdown</h3>
                                 <button className="text-zinc-400 hover:text-blue-600 rounded-full p-1 hover:bg-zinc-50 transition-colors"><MoreVertical size={16} /></button>
@@ -556,10 +560,10 @@ export default function ChildSafety() {
                 </div>
 
                 {/* RIGHT: SYSTEM & INCIDENTS (4 Cols) */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
+                <div className="lg:col-span-4 flex flex-col gap-6 md:gap-6">
                     
                     {/* System Infrastructure (Dark Mode) */}
-                    <div className="bg-zinc-900 text-white p-8 rounded-[2.5rem] shadow-xl shadow-zinc-200 relative overflow-hidden transition-all duration-700">
+                    <div className="bg-zinc-900 text-white p-6 md:p-8 rounded-[2rem] md:rounded-[2.5rem] shadow-xl shadow-zinc-200 relative overflow-hidden transition-all duration-700">
                         <div className="relative z-10">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="font-bold text-lg">System Status</h3>
@@ -594,7 +598,7 @@ export default function ChildSafety() {
                     </div>
 
                     {/* Incident Log (Functional Search & Actions) */}
-                    <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm flex-1 flex flex-col h-[500px]">
+                    <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm flex-1 flex flex-col h-[500px]">
                         <div className="flex items-center gap-2 mb-4 bg-zinc-50 p-2 rounded-xl border border-zinc-100 focus-within:border-blue-300 focus-within:ring-2 focus-within:ring-blue-100 transition-all">
                             <Search size={16} className="text-zinc-400 ml-1" />
                             <input 
@@ -616,57 +620,58 @@ export default function ChildSafety() {
                                         exit={{ opacity: 0, scale: 0.9, height: 0 }}
                                         transition={{ duration: 0.3 }}
                                         key={inc.id} 
-                                        className="flex gap-4 items-start p-2 hover:bg-zinc-50 rounded-2xl transition-colors cursor-pointer group border-l-2 border-transparent hover:border-blue-200 relative overflow-hidden shrink-0"
+                                        className="relative pl-4 border-l-2 border-zinc-100 group cursor-pointer hover:border-orange-200 transition-colors"
                                     >
-                                        <div className={`p-2.5 rounded-xl mt-0.5 shrink-0 transition-colors ${
-                                            inc.severity === 'High' ? 'bg-rose-50 text-rose-500' : 
-                                            inc.severity === 'Medium' ? 'bg-amber-50 text-amber-500' : 'bg-emerald-50 text-emerald-500'
-                                        }`}>
-                                            {inc.severity === 'High' ? <AlertTriangle size={16} /> : <ShieldCheck size={16} />}
+                                        <div className={`absolute left-[-5px] top-1.5 w-2 h-2 rounded-full ${
+                                            inc.severity === 'High' ? 'bg-rose-500' : 
+                                            inc.severity === 'Medium' ? 'bg-amber-500' : 'bg-emerald-500'
+                                        }`} />
+                                        
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-xs font-bold text-zinc-800">{inc.type}</span>
+                                            <span className="text-[9px] text-zinc-400">{inc.time}</span>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-start">
-                                                <p className="text-sm font-bold text-zinc-900 truncate">{inc.type}</p>
-                                                <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wide transition-colors ${
-                                                    inc.status === 'Resolved' ? 'bg-zinc-100 text-zinc-500' : 
-                                                    inc.status === 'Dispatched' ? 'bg-indigo-50 text-indigo-600' :
-                                                    inc.status === 'Responding' ? 'bg-blue-100 text-blue-700' :
-                                                    'bg-blue-50 text-blue-600'
-                                                }`}>{inc.status}</span>
-                                            </div>
-                                            <p className="text-[11px] text-zinc-500 mt-0.5 flex items-center gap-1 truncate">
-                                                <MapPin size={10} /> {inc.loc}
-                                            </p>
-                                            
+                                        <div className="flex items-center gap-1.5 text-[10px] text-zinc-500">
+                                            <MapPin size={10} /> {inc.loc}
+                                        </div>
+                                        <div className="mt-2 flex justify-between items-center h-6">
+                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase ${
+                                                inc.status === 'Resolved' ? 'bg-zinc-100 text-zinc-500' : 
+                                                inc.status === 'Dispatched' ? 'bg-indigo-50 text-indigo-600' :
+                                                inc.status === 'Responding' ? 'bg-blue-100 text-blue-700' :
+                                                'bg-blue-50 text-blue-600'
+                                            }`}>
+                                                {inc.status}
+                                            </span>
+
                                             {/* NEW FEATURE 4: Quick Actions (Dispatch) */}
-                                            <div className="flex justify-between items-center mt-2 h-6">
-                                                <p className="text-[10px] text-zinc-400">{inc.time}</p>
-                                                <AnimatePresence mode="wait">
-                                                    {inc.status === 'Pending' && (
-                                                        <motion.button 
-                                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                                            onClick={(e) => { e.stopPropagation(); handleDispatch(inc.id); }}
-                                                            className="flex items-center gap-1 bg-zinc-900 text-white text-[9px] px-2 py-1 rounded-lg hover:bg-zinc-700 transition-colors active:scale-95"
-                                                        >
-                                                            Dispatch <Send size={8} />
-                                                        </motion.button>
-                                                    )}
-                                                    {inc.status === 'Dispatched' && (
-                                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-1 text-[9px] text-zinc-500">
-                                                            <Loader2 size={8} className="animate-spin" /> Notifying...
-                                                        </motion.div>
-                                                    )}
-                                                    {(inc.status === 'Responding' || inc.status === 'Resolved') && (
-                                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500">
-                                                            <CheckCircle2 size={12} />
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
+                                            <AnimatePresence mode="wait">
+                                                {inc.status === 'Pending' && (
+                                                    <motion.button 
+                                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                                        onClick={(e) => { e.stopPropagation(); handleDispatch(inc.id); }}
+                                                        className="flex items-center gap-1 bg-zinc-900 text-white text-[9px] px-2 py-1 rounded-lg hover:bg-zinc-700 transition-colors active:scale-95"
+                                                    >
+                                                        Dispatch <Send size={8} />
+                                                    </motion.button>
+                                                )}
+                                                {inc.status === 'Dispatched' && (
+                                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-1 text-[9px] text-zinc-500">
+                                                        <Loader2 size={8} className="animate-spin" /> Notifying...
+                                                    </motion.div>
+                                                )}
+                                                {(inc.status === 'Responding' || inc.status === 'Resolved') && (
+                                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500">
+                                                        <CheckCircle2 size={12} />
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
                                     </motion.div>
                                 )) : (
-                                    <div className="text-center py-8 text-zinc-400 text-xs">No incidents found</div>
+                                    <motion.p initial={{opacity:0}} animate={{opacity:1}} className="text-center text-xs text-zinc-400 py-4 italic">
+                                        No matching incidents found.
+                                    </motion.p>
                                 )}
                             </AnimatePresence>
                         </div>
@@ -677,7 +682,7 @@ export default function ChildSafety() {
                     </div>
 
                     {/* Protocol Link */}
-                    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 rounded-[2.5rem] text-white shadow-lg shadow-blue-200 relative overflow-hidden group">
+                    <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-6 rounded-[2rem] md:rounded-[2.5rem] text-white shadow-lg shadow-blue-200 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-500"></div>
                         
                         <div className="flex items-center gap-3 mb-2 relative z-10">

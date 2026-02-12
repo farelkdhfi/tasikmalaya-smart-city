@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react'
+import React, { useEffect, useState, useRef, useMemo, Suspense } from 'react'
 import { Link, useNavigate } from "react-router-dom"
 import { Canvas, useFrame } from '@react-three/fiber'
 import { 
@@ -10,13 +10,13 @@ import {
     Sphere,
     Torus
 } from '@react-three/drei'
-import { motion, AnimatePresence } from 'framer-motion' // Added AnimatePresence for smooth mobile menu
+import { motion, AnimatePresence } from 'framer-motion'
 import * as THREE from 'three'
 
 // Icons
 import {
     Menu, X, Sparkles, ArrowRight, ChevronRight,
-    ArrowUpRight, Search, LayoutGrid
+    ArrowUpRight, Search, LayoutGrid, Loader2
 } from 'lucide-react'
 import { SECTION_DATA } from '../data/sectionData'
 
@@ -144,7 +144,7 @@ const EnvironmentSection = () => {
             <div className="max-w-6xl mx-auto px-4 md:px-6">
                 <SectionHeader title={data.title} subtitle={data.subtitle} linkTo="/environment-dashboard" />
 
-                {/* Grid Responsif: 1 kolom (Mobile) -> 2 kolom (SM) -> 3 kolom (MD) -> 5 kolom (LG) */}
+                {/* Grid Responsif */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     {data.items.map((item) => (
                         <Link to={item.link} key={item.id} className="block group">
@@ -388,12 +388,43 @@ const ElegantShapes = () => {
     )
 }
 
+// --- COMPONENT PENGATUR STATUS LOADING ---
+// Component ini tidak akan dirender sampai <Environment /> dan aset 3D lainnya di dalam Suspense siap.
+// Begitu dirender, ia akan memanggil onReady(true).
+const StartupSignal = ({ onReady }) => {
+    useEffect(() => {
+        // Memberikan sedikit delay agar transisi tidak kasar
+        const timeout = setTimeout(() => {
+            onReady(true)
+        }, 500) 
+        return () => clearTimeout(timeout)
+    }, [onReady])
+    return null
+}
+
+// --- LOADING SCREEN COMPONENT ---
+const LoadingScreen = () => {
+    return (
+        <div className="fixed inset-0 z-[9999] bg-[#F5F5F7] flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+                 <div className="w-12 h-12 flex items-center justify-center mb-2 animate-bounce">
+                    <img src={LogoImg} alt="Logo" className="h-full" />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                    <span className="text-zinc-500 font-medium text-sm tracking-wide">INITIALIZING ENVIRONMENT...</span>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 
 // --- HERO SECTION ---
-const Hero = () => {
+const Hero = ({ onSceneReady }) => {
     const navigate = useNavigate()
     return (
-        <section className='relative pt-24 pb-12 md:pt-32 md:pb-20 w-full overflow-hidden bg-[#F5F5F7] min-h-[90vh] md:min-h-0 flex items-center justify-center'>
+        <section className='relative pt-24 pb-12 md:pt-32 md:pb-20 w-full overflow-hidden bg-[#F5F5F7] min-h-[70vh] md:min-h-0 flex items-center justify-center'>
             {/* 3D Background - Optimized */}
             <div className="absolute inset-0 z-0 pointer-events-none">
                 <Canvas 
@@ -401,7 +432,11 @@ const Hero = () => {
                     gl={{ antialias: true, stencil: false, powerPreference: "high-performance" }}
                     camera={{ position: [0, 0, 14], fov: 50 }} 
                 >
-                      <ElegantShapes />
+                    {/* Suspense akan menahan rendering StartupSignal sampai ElegantShapes (yg mengandung Environment) siap */}
+                    <Suspense fallback={null}>
+                         <ElegantShapes />
+                         <StartupSignal onReady={onSceneReady} />
+                    </Suspense>
                 </Canvas>
                 
                 {/* Gradient Overlays */}
@@ -516,17 +551,39 @@ const Footer = () => {
 
 // --- MAIN LAYOUT ---
 const LandingPage = () => {
+    // State untuk melacak apakah 3D sudah selesai dimuat
+    const [is3DLoaded, setIs3DLoaded] = useState(false)
+
     return (
         <div className="bg-[#F5F5F7] min-h-screen text-zinc-900 font-sans antialiased selection:bg-blue-100 selection:text-blue-900">
-            <Navbar />
-            <main>
-                <Hero />
-                <EnvironmentSection />
-                <EducationSection />
-                <SecuritySection />
-                <AISection />
-            </main>
-            <Footer />
+            {/* Tampilkan Loading Screen jika 3D belum siap */}
+            <AnimatePresence>
+                {!is3DLoaded && (
+                    <motion.div
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.8, ease: "easeInOut" }}
+                        className="fixed inset-0 z-[9999]"
+                    >
+                        <LoadingScreen />
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Bungkus konten utama. Meskipun loading, komponen ini tetap dirender 
+                agar Canvas bisa memproses 3D di background, tapi kita sembunyikan visibilitasnya 
+                sampai siap. Menggunakan opacity agar transisi halus. */}
+            <div className={`transition-opacity duration-1000 ${is3DLoaded ? 'opacity-100' : 'opacity-0 h-0 overflow-hidden'}`}>
+                <Navbar />
+                <main>
+                    {/* Kirim function setter ke Hero untuk mentrigger saat 3D siap */}
+                    <Hero onSceneReady={setIs3DLoaded} />
+                    <EnvironmentSection />
+                    <EducationSection />
+                    <SecuritySection />
+                    <AISection />
+                </main>
+                <Footer />
+            </div>
         </div>
     )
 }

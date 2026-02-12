@@ -36,7 +36,8 @@ const MetricCard = ({ item }) => (
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         whileHover={{ y: -4, scale: 1.02 }}
-        className="bg-white rounded-3xl p-5 h-48 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-blue-900/5 border border-zinc-100 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+        // RESPONSIVE: Padding adjusted for mobile vs desktop (p-4 vs p-5)
+        className="bg-white rounded-3xl p-4 md:p-5 h-48 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-blue-900/5 border border-zinc-100 transition-all duration-300 group cursor-pointer relative overflow-hidden"
     >
         <div className="flex justify-between items-start z-10">
             <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 bg-zinc-50 text-zinc-900 group-hover:bg-blue-900 group-hover:text-white`}>
@@ -48,7 +49,8 @@ const MetricCard = ({ item }) => (
         </div>
         <div className="z-10 mt-auto">
             <div className="flex justify-between items-end mb-1">
-                <h3 className="text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-blue-900 transition-colors">
+                {/* RESPONSIVE: Text size adjusts slightly on smaller screens to prevent overflow */}
+                <h3 className="text-2xl md:text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-blue-900 transition-colors">
                     {item.value}
                 </h3>
                 <TrendBadge value={item.trend} invert={item.label === 'Active Cases' || item.label === 'Avg Response'} />
@@ -66,7 +68,6 @@ const MetricCard = ({ item }) => (
 const DispatchModal = ({ incident, availableUnits, onClose, onAssign }) => {
   if (!incident) return null;
 
-  // Urutkan unit berdasarkan jarak simulasi (randomized static for UI feel)
   const sortedUnits = [...availableUnits].sort(() => Math.random() - 0.5);
 
   return (
@@ -75,7 +76,8 @@ const DispatchModal = ({ incident, availableUnits, onClose, onAssign }) => {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-white rounded-[2rem] w-full max-w-md p-6 shadow-2xl"
+        // RESPONSIVE: Width and Margin adjustments for mobile
+        className="bg-white rounded-[2rem] w-full max-w-md p-5 md:p-6 shadow-2xl mx-2"
       >
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -143,7 +145,7 @@ export default function PoliceCenter() {
     { id: 1704, type: "Traffic Obstruction", loc: "Indihiang Terminal", time: new Date(Date.now() - 2400000), priority: "low" },
   ]);
 
-  // Unit State Management (Id, Status: 'idle' | 'busy' | 'patrol')
+  // Unit State Management
   const [units, setUnits] = useState(
       Array.from({ length: 20 }, (_, i) => ({ 
           id: 101 + i, 
@@ -151,7 +153,7 @@ export default function PoliceCenter() {
       }))
   );
 
-  const [resolvedCount, setResolvedCount] = useState(142); // Accumulator for KPI
+  const [resolvedCount, setResolvedCount] = useState(142); 
 
   // --- DERIVED STATS ---
   const unitStats = useMemo(() => {
@@ -177,17 +179,14 @@ export default function PoliceCenter() {
   // --- ACTIONS ---
 
   const handleDispatch = useCallback((unitId) => {
-      // 1. Update unit status to busy
       setUnits(prev => prev.map(u => u.id === unitId ? { ...u, status: 'busy' } : u));
       
-      // 2. Resolve incident (remove from active list)
       if (selectedIncident) {
         setIncidents(prev => prev.filter(i => i.id !== selectedIncident.id));
         setResolvedCount(prev => prev + 1);
         setSelectedIncident(null);
       }
 
-      // 3. Simulation: Unit becomes available again after random time (5-10 seconds for demo purpose)
       setTimeout(() => {
           setUnits(prev => prev.map(u => u.id === unitId ? { ...u, status: 'idle' } : u));
       }, Math.random() * 5000 + 5000);
@@ -199,12 +198,10 @@ export default function PoliceCenter() {
   useEffect(() => {
     const clockTimer = setInterval(() => setTime(new Date()), 1000);
 
-    // Incident Generator
     const incidentTimer = setInterval(() => {
       const types = ["Theft Report", "Noise Complaint", "Traffic Stop", "Medical Assist", "Fire Alarm", "Vandalism"];
       const locs = ["Simpang Lima", "Tawang Square", "Cikalang", "Mangkubumi", "Alun-alun", "Pecinan"];
       
-      // Higher chance to spawn incident if Emergency Mode is ON
       const spawnChance = isEmergency ? 0.8 : 0.3;
 
       if (Math.random() < spawnChance && incidents.length < 12) {
@@ -217,7 +214,7 @@ export default function PoliceCenter() {
           };
           setIncidents(prev => [newInc, ...prev]);
       }
-    }, 5000); // Check every 5s
+    }, 5000);
 
     return () => {
       clearInterval(clockTimer);
@@ -235,7 +232,6 @@ export default function PoliceCenter() {
     });
   }, [incidents, searchQuery, filterPriority]);
 
-  // Helper formatting
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
@@ -261,17 +257,18 @@ export default function PoliceCenter() {
                     initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                     className="mb-8 overflow-hidden"
                 >
-                    <div className="bg-rose-600 text-white p-4 rounded-3xl flex items-center justify-between shadow-xl shadow-rose-200 animate-pulse">
+                    {/* RESPONSIVE: Stack flex items on mobile, row on tablet+ */}
+                    <div className="bg-rose-600 text-white p-4 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between shadow-xl shadow-rose-200 animate-pulse gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="bg-white/20 p-3 rounded-full animate-spin duration-1000">
+                            <div className="bg-white/20 p-3 rounded-full animate-spin duration-1000 shrink-0">
                                 <Siren size={32} />
                             </div>
                             <div>
                                 <h2 className="text-xl font-bold uppercase tracking-widest">Code Red Active</h2>
-                                <p className="text-rose-100 text-sm">City-wide lockdown protocols initiated. High incident rate.</p>
+                                <p className="text-rose-100 text-sm">City-wide lockdown protocols initiated.</p>
                             </div>
                         </div>
-                        <button onClick={() => setIsEmergency(false)} className="px-6 py-2 bg-white text-rose-600 font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-rose-50 transition-colors">
+                        <button onClick={() => setIsEmergency(false)} className="w-full sm:w-auto px-6 py-2 bg-white text-rose-600 font-bold rounded-xl text-xs uppercase tracking-wider hover:bg-rose-50 transition-colors">
                             Stand Down
                         </button>
                     </div>
@@ -280,21 +277,23 @@ export default function PoliceCenter() {
         </AnimatePresence>
 
         {/* HEADER CONTROLS */}
+        {/* RESPONSIVE: flex-col on mobile, row on md+ */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
             <div className="flex items-center gap-3">
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 shadow-sm animate-pulse">
                     <div className={`w-2 h-2 rounded-full ${isEmergency ? 'bg-rose-600' : 'bg-blue-600'}`}></div>
                     <span className={`text-xs font-bold uppercase tracking-wide ${isEmergency ? 'text-rose-800' : 'text-blue-800'}`}>
-                        {isEmergency ? 'Emergency Mode' : 'Command Center Live'}
+                        {isEmergency ? 'Emergency Mode' : 'Command Center'}
                     </span>
                 </div>
                 <span className="text-xs text-zinc-400 font-mono">Synced: {time.toLocaleTimeString()}</span>
             </div>
 
-            <div className="flex items-center gap-4">
+            {/* RESPONSIVE: Width full on mobile for better touch targets, wrap elements */}
+            <div className="flex flex-wrap md:flex-nowrap items-center gap-4 w-full md:w-auto">
                 <button 
                     onClick={() => setIsEmergency(!isEmergency)}
-                    className={`p-3 rounded-full transition-all border ${
+                    className={`p-3 rounded-full transition-all border shrink-0 ${
                         isEmergency ? 'bg-zinc-800 text-white border-zinc-700' : 'bg-white text-zinc-400 border-zinc-200 hover:text-rose-500 hover:border-rose-200'
                     }`}
                 >
@@ -302,8 +301,8 @@ export default function PoliceCenter() {
                 </button>
 
                 {/* Safety Score Widget */}
-                <div className="bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-colors duration-500 ${isEmergency ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-800'}`}>
+                <div className="bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4 flex-1 md:flex-initial">
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-colors duration-500 shrink-0 ${isEmergency ? 'bg-rose-100 text-rose-600' : 'bg-blue-100 text-blue-800'}`}>
                         <Shield size={20} fill="currentColor" />
                     </div>
                     <div>
@@ -321,7 +320,8 @@ export default function PoliceCenter() {
 
         {/* KPI SECTION (Dynamic Data) */}
         <section className="mb-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* RESPONSIVE: grid-cols-2 on small screens, 4 on md+ */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {kpiData.map((kpi) => (
                     <MetricCard 
                         key={kpi.id} 
@@ -335,29 +335,31 @@ export default function PoliceCenter() {
         </section>
 
         {/* MAIN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
             
             {/* LEFT: MAP & ANALYTICS (8 Cols) */}
-            <div className="lg:col-span-8 flex flex-col gap-8">
+            <div className="lg:col-span-8 flex flex-col gap-6 md:gap-8">
                 
                 {/* Incident Map / CCTV View */}
-                <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-zinc-200 relative overflow-hidden h-[500px] group transition-all">
+                {/* RESPONSIVE: Height adjusted for mobile (350px) vs desktop (500px) */}
+                <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-zinc-200 relative overflow-hidden h-[350px] md:h-[500px] group transition-all">
                       {/* Map Container */}
                       <div className="w-full h-full rounded-[2rem] bg-zinc-100 relative overflow-hidden">
                         
                         {/* CCTV MODE TOGGLE */}
-                        <div className="absolute top-6 right-6 z-30 flex bg-white/90 backdrop-blur rounded-2xl p-1 border border-zinc-200 shadow-sm">
+                        {/* RESPONSIVE: Position and padding adjusted */}
+                        <div className="absolute top-4 right-4 md:top-6 md:right-6 z-30 flex bg-white/90 backdrop-blur rounded-2xl p-1 border border-zinc-200 shadow-sm">
                             <button 
                                 onClick={() => setMapMode('map')}
                                 className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-xl transition-all ${mapMode === 'map' ? 'bg-blue-900 text-white shadow-md' : 'text-zinc-500 hover:bg-zinc-100'}`}
                             >
-                                Map View
+                                Map
                             </button>
                             <button 
                                 onClick={() => setMapMode('cctv')}
                                 className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-xl transition-all ${mapMode === 'cctv' ? 'bg-blue-900 text-white shadow-md' : 'text-zinc-500 hover:bg-zinc-100'}`}
                             >
-                                CCTV Grid
+                                CCTV
                             </button>
                         </div>
 
@@ -370,10 +372,10 @@ export default function PoliceCenter() {
                                 <div className="absolute bottom-1/3 right-1/3 w-40 h-40 border-2 border-zinc-300/50 -rotate-6"></div>
                                 
                                 {/* Map Overlay Info */}
-                                <div className="absolute top-6 left-6 z-20">
+                                <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20">
                                     <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-zinc-200 shadow-sm flex flex-col gap-1">
                                         <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
-                                            <MapPin size={16} className="text-blue-800" /> Jurisdiction View
+                                            <MapPin size={16} className="text-blue-800" /> <span className="hidden xs:inline">Jurisdiction</span> View
                                         </h3>
                                         <div className="flex gap-2">
                                             <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[9px] font-bold rounded uppercase">Tawang</span>
@@ -382,7 +384,7 @@ export default function PoliceCenter() {
                                     </div>
                                 </div>
 
-                                {/* Patrol Units (Blue Markers) - Simulated Movement */}
+                                {/* Patrol Units */}
                                 <motion.div 
                                     animate={{ x: [0, 60, 0], y: [0, -40, 0] }} 
                                     transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
@@ -408,7 +410,7 @@ export default function PoliceCenter() {
                                             <span className={`absolute -inset-4 rounded-full animate-ping ${inc.priority === 'high' ? 'bg-rose-500/20' : 'bg-amber-500/20'}`}></span>
                                             <div className={`w-4 h-4 rounded-full border-2 border-white shadow-lg ${inc.priority === 'high' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
                                             {/* Tooltip */}
-                                            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-3 py-2 rounded-xl shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+                                            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-3 py-2 rounded-xl shadow-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none hidden md:block">
                                                 <p className="text-[10px] font-bold uppercase text-rose-400">{inc.type}</p>
                                                 <p className="text-[10px] text-zinc-300">{inc.loc}</p>
                                                 <p className="text-[9px] text-zinc-500 mt-1">Click to dispatch</p>
@@ -418,7 +420,7 @@ export default function PoliceCenter() {
                                 ))}
 
                                 {/* Legend */}
-                                <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md p-3 rounded-2xl border border-zinc-200 shadow-sm flex gap-4">
+                                <div className="absolute bottom-4 right-4 md:bottom-6 md:right-6 bg-white/90 backdrop-blur-md p-3 rounded-2xl border border-zinc-200 shadow-sm flex gap-4">
                                     <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
                                         <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span> Incident
                                     </div>
@@ -435,13 +437,12 @@ export default function PoliceCenter() {
                                         <div className="absolute inset-0 flex items-center justify-center opacity-20">
                                             <Video size={40} className="text-zinc-600" />
                                         </div>
-                                        {/* Simulated Grain/Static */}
                                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 animate-pulse"></div>
-                                        <div className="absolute top-3 left-3 flex items-center gap-2">
+                                        <div className="absolute top-2 left-2 md:top-3 md:left-3 flex items-center gap-2">
                                             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                                            <span className="text-[9px] font-mono text-white/70">REC • CAM_0{cam}</span>
+                                            <span className="text-[8px] md:text-[9px] font-mono text-white/70">REC • CAM_0{cam}</span>
                                         </div>
-                                        <div className="absolute bottom-3 right-3 text-[9px] font-mono text-white/50">
+                                        <div className="absolute bottom-2 right-2 md:bottom-3 md:right-3 text-[8px] md:text-[9px] font-mono text-white/50">
                                             {time.toLocaleTimeString()}
                                         </div>
                                     </div>
@@ -455,7 +456,7 @@ export default function PoliceCenter() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* Activity Volume */}
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-zinc-200 shadow-sm">
+                    <div className="bg-white p-5 md:p-6 rounded-[2.5rem] border border-zinc-200 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="font-bold text-sm text-zinc-900">Incident Volume (24h)</h3>
                             <span className="text-[10px] font-bold bg-zinc-100 text-zinc-500 px-2 py-1 rounded-md">Peak: 16:00</span>
@@ -465,7 +466,7 @@ export default function PoliceCenter() {
                                 <AreaChart data={[
                                     { time: '08:00', val: 12 }, { time: '10:00', val: 18 }, { time: '12:00', val: 15 },
                                     { time: '14:00', val: 22 }, { time: '16:00', val: 28 }, { time: '18:00', val: 20 },
-                                    { time: '20:00', val: incidents.length + 15 } // Dynamic tip
+                                    { time: '20:00', val: incidents.length + 15 }
                                 ]}>
                                     <defs>
                                         <linearGradient id="colorInc" x1="0" y1="0" x2="0" y2="1">
@@ -483,7 +484,7 @@ export default function PoliceCenter() {
                     </div>
 
                     {/* Unit Deployment */}
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-zinc-200 shadow-sm relative overflow-hidden">
+                    <div className="bg-white p-5 md:p-6 rounded-[2.5rem] border border-zinc-200 shadow-sm relative overflow-hidden">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="font-bold text-sm text-zinc-900">Unit Deployment</h3>
                             <button className="p-1 hover:bg-zinc-100 rounded-full text-zinc-400"><MoreHorizontal size={16} /></button>
@@ -517,7 +518,8 @@ export default function PoliceCenter() {
             <div className="lg:col-span-4 flex flex-col gap-6">
                 
                 {/* Dispatch Status (Dark Card) */}
-                <div className={`text-white rounded-[2.5rem] p-8 shadow-xl relative overflow-hidden transition-colors duration-500 ${isEmergency ? 'bg-rose-950 shadow-rose-200' : 'bg-blue-950 shadow-blue-200'}`}>
+                {/* RESPONSIVE: Padding adjusted */}
+                <div className={`text-white rounded-[2.5rem] p-6 md:p-8 shadow-xl relative overflow-hidden transition-colors duration-500 ${isEmergency ? 'bg-rose-950 shadow-rose-200' : 'bg-blue-950 shadow-blue-200'}`}>
                     <div className="relative z-10">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="font-bold text-lg">Dispatch</h3>
@@ -548,7 +550,8 @@ export default function PoliceCenter() {
                 </div>
 
                 {/* Incident Feed */}
-                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm flex-1 flex flex-col min-h-[500px]">
+                {/* RESPONSIVE: min-height adjusted so it's not too long on mobile */}
+                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-5 md:p-6 shadow-sm flex-1 flex flex-col min-h-[400px] lg:min-h-[500px]">
                     <div className="flex items-center justify-between mb-4 px-2">
                         <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Live Feed</h3>
                         <div className="flex gap-1">
@@ -569,6 +572,7 @@ export default function PoliceCenter() {
                                 className="w-full bg-zinc-50 border border-zinc-100 rounded-xl py-2 pl-9 pr-3 text-xs font-medium text-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
                         </div>
+                        {/* RESPONSIVE: Native Horizontal Scroll handling via overflow-x-auto */}
                         <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                             {['all', 'high', 'med', 'low'].map(priority => (
                                 <button 
@@ -586,7 +590,7 @@ export default function PoliceCenter() {
                         </div>
                     </div>
 
-                    <div className="space-y-2 flex-1 overflow-y-auto max-h-[400px] pr-1 custom-scrollbar">
+                    <div className="space-y-2 flex-1 overflow-y-auto max-h-[300px] lg:max-h-[400px] pr-1 custom-scrollbar">
                         <AnimatePresence initial={false}>
                             {filteredIncidents.map((inc) => (
                                 <motion.div 
@@ -604,7 +608,7 @@ export default function PoliceCenter() {
                                     }`} />
                                     
                                     <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between items-start">
+                                        <div className="flex justify-between items-start gap-2">
                                             <p className="text-sm font-bold text-zinc-900 truncate group-hover:text-blue-900 transition-colors">{inc.type}</p>
                                             <span className="text-[10px] text-zinc-400 whitespace-nowrap bg-zinc-50 px-1.5 py-0.5 rounded-md">{getRelativeTime(inc.time)}</span>
                                         </div>
@@ -613,7 +617,7 @@ export default function PoliceCenter() {
                                             <p className="text-[11px] text-zinc-500 truncate">{inc.loc}</p>
                                         </div>
                                     </div>
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity self-center">
+                                    <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity self-center">
                                         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                                             <Navigation size={12} />
                                         </div>

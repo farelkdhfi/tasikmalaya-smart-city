@@ -40,10 +40,10 @@ const TrendBadge = ({ value, invert = false }) => {
   // If invert is true (e.g. Active Fires), then Negative trend is "Good" (Green)
   const isGood = invert ? !isPositive : isPositive;
   
-  if (value === 0) return <div className="bg-zinc-100 text-zinc-500 text-xs px-2 py-1 rounded-full font-bold">Stable</div>;
+  if (value === 0) return <div className="bg-zinc-100 text-zinc-500 text-[10px] md:text-xs px-2 py-1 rounded-full font-bold">Stable</div>;
 
   return (
-    <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+    <div className={`flex items-center gap-1 text-[10px] md:text-xs font-medium px-2 py-1 rounded-full ${
       isGood ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
     }`}>
       {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
@@ -56,27 +56,29 @@ const MetricCard = ({ item }) => (
   <motion.div
     layout
     whileHover={{ y: -4, scale: 1.02 }}
-    className="bg-white rounded-3xl p-5 h-48 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-red-500/5 border border-zinc-100 transition-all duration-300 group cursor-pointer relative overflow-hidden"
+    // RESPONSIVE: Height and Padding adjustments
+    className="bg-white rounded-3xl p-4 md:p-5 h-40 md:h-48 flex flex-col justify-between shadow-sm hover:shadow-xl hover:shadow-red-500/5 border border-zinc-100 transition-all duration-300 group cursor-pointer relative overflow-hidden"
   >
     <div className="flex justify-between items-start z-10">
-      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 bg-zinc-50 text-zinc-900 group-hover:bg-red-600 group-hover:text-white`}>
-        <item.icon size={20} />
+      <div className={`w-8 h-8 md:w-10 md:h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 bg-zinc-50 text-zinc-900 group-hover:bg-red-600 group-hover:text-white`}>
+        <item.icon size={18} className="md:w-5 md:h-5" />
       </div>
-      <div className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-red-600 transition-colors">
-        <ArrowUpRight size={14} />
+      <div className="w-6 h-6 md:w-7 md:h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-red-600 transition-colors">
+        <ArrowUpRight size={12} className="md:w-[14px]" />
       </div>
     </div>
     <div className="z-10 mt-auto">
       <div className="flex justify-between items-end mb-1">
-        <h3 className="text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-red-600 transition-colors">
+        {/* RESPONSIVE: Text size */}
+        <h3 className="text-2xl md:text-3xl font-bold text-zinc-900 tracking-tight leading-none group-hover:text-red-600 transition-colors">
           {item.value}
         </h3>
         <TrendBadge value={item.trend} invert={item.invert} />
       </div>
-      <p className="text-xs text-zinc-500 font-medium uppercase tracking-wide">{item.label}</p>
+      <p className="text-[10px] md:text-xs text-zinc-500 font-medium uppercase tracking-wide">{item.label}</p>
     </div>
     <div className="absolute -right-4 -bottom-4 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none">
-      <item.icon size={100} />
+      <item.icon size={80} className="md:w-[100px] md:h-[100px]" />
     </div>
   </motion.div>
 );
@@ -231,40 +233,42 @@ export default function FireResponse() {
           {alertVisible && (
             <motion.div 
               initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -50 }}
-              className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-red-500/50"
+              // RESPONSIVE: Width adjustment on mobile
+              className="fixed top-6 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 text-white px-4 md:px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border border-red-500/50 w-[90%] md:w-auto justify-center"
             >
-              <Radio className="text-red-500 animate-pulse" size={18} />
-              <span className="font-bold tracking-wide text-sm">{broadcastMsg}</span>
+              <Radio className="text-red-500 animate-pulse shrink-0" size={18} />
+              <span className="font-bold tracking-wide text-xs md:text-sm truncate">{broadcastMsg}</span>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* HEADER CONTROLS */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
-            <div className="flex items-center gap-3">
+        {/* RESPONSIVE: Stack vertical on mobile, row on desktop */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 mb-6 md:mb-8">
+            <div className="flex flex-wrap items-center gap-3">
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 shadow-sm animate-pulse">
                     <div className="w-2 h-2 rounded-full bg-red-600"></div>
-                    <span className="text-xs font-bold text-red-700 uppercase tracking-wide">Incident Active</span>
+                    <span className="text-[10px] md:text-xs font-bold text-red-700 uppercase tracking-wide">Incident Active</span>
                 </div>
-                <span className="text-xs text-zinc-400 font-mono">Synced: {new Date().toLocaleTimeString()}</span>
+                <span className="text-[10px] md:text-xs text-zinc-400 font-mono">Synced: {new Date().toLocaleTimeString()}</span>
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-wrap w-full md:w-auto gap-3">
               {/* Feature Broadcast Trigger */}
-              <button onClick={handleBroadcast} className="bg-white p-2 px-4 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-2 text-zinc-600 hover:text-red-600 hover:border-red-200 transition-all font-bold text-xs uppercase tracking-wider">
+              <button onClick={handleBroadcast} className="flex-1 md:flex-none justify-center bg-white p-2 px-4 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-2 text-zinc-600 hover:text-red-600 hover:border-red-200 transition-all font-bold text-xs uppercase tracking-wider">
                  <Radio size={16} /> Broadcast
               </button>
 
               {/* Fire Danger Widget (Dynamic) */}
-              <div className="bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4 transition-all duration-500">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-colors duration-500 ${kpiStats.riskIndex === 'High' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>
-                      <Flame size={20} fill="currentColor" />
+              <div className="flex-1 md:flex-none bg-white p-2 pr-4 md:pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center justify-center md:justify-start gap-4 transition-all duration-500">
+                  <div className={`w-8 h-8 md:w-12 md:h-12 rounded-full flex items-center justify-center border-4 border-white shadow-sm transition-colors duration-500 ${kpiStats.riskIndex === 'High' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>
+                      <Flame size={16} className="md:w-5 md:h-5" fill="currentColor" />
                   </div>
                   <div>
-                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Fire Danger Rating</p>
+                      <p className="text-[9px] md:text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Fire Danger Rating</p>
                       <div className="flex items-baseline gap-1">
-                          <span className="text-lg font-bold text-zinc-900 uppercase">{kpiStats.riskIndex}</span>
-                          <span className="text-xs text-zinc-400 font-medium">• {weather.temp}°C</span>
+                          <span className="text-base md:text-lg font-bold text-zinc-900 uppercase">{kpiStats.riskIndex}</span>
+                          <span className="text-[10px] md:text-xs text-zinc-400 font-medium">• {weather.temp}°C</span>
                       </div>
                   </div>
               </div>
@@ -272,8 +276,9 @@ export default function FireResponse() {
         </div>
 
         {/* KPI SECTION (Driven by State) */}
-        <section className="mb-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="mb-6 md:mb-8">
+            {/* RESPONSIVE: 2 cols on mobile, 4 on desktop */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {KPI_DATA.map((kpi) => (
                     <MetricCard key={kpi.id} item={kpi} />
                 ))}
@@ -281,32 +286,33 @@ export default function FireResponse() {
         </section>
 
         {/* MAIN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* RESPONSIVE: 1 col on mobile, 12 cols on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
             
             {/* LEFT: MAP & ANALYTICS (8 Cols) */}
-            <div className="lg:col-span-8 flex flex-col gap-8">
+            <div className="lg:col-span-8 flex flex-col gap-6 md:gap-8">
                 
                 {/* Tactical Map */}
-                <div className="bg-white rounded-[2.5rem] p-2 shadow-sm border border-zinc-200 relative overflow-hidden h-[500px] group">
+                <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-2 shadow-sm border border-zinc-200 relative overflow-hidden h-[400px] md:h-[500px] group">
                       {/* Map Container */}
-                      <div className="w-full h-full rounded-[2rem] bg-zinc-100 relative overflow-hidden select-none" onClick={() => setSelectedIncidentId(null)}>
+                      <div className="w-full h-full rounded-[1.5rem] md:rounded-[2rem] bg-zinc-100 relative overflow-hidden select-none" onClick={() => setSelectedIncidentId(null)}>
                         
                         {/* City Grid (Toggleable) */}
                         {mapFilters.grid && (
                           <div className="absolute inset-0 opacity-[0.05] bg-[linear-gradient(to_right,#000000_1px,transparent_1px),linear-gradient(to_bottom,#000000_1px,transparent_1px)] bg-[size:40px_40px]"></div>
                         )}
                         
-                        <div className="absolute top-1/4 left-1/4 w-32 h-32 border-2 border-zinc-200 rotate-45"></div>
-                        <div className="absolute bottom-1/3 right-1/4 w-48 h-48 border-2 border-zinc-200 rounded-full"></div>
+                        <div className="absolute top-1/4 left-1/4 w-24 h-24 md:w-32 md:h-32 border-2 border-zinc-200 rotate-45"></div>
+                        <div className="absolute bottom-1/3 right-1/4 w-32 h-32 md:w-48 md:h-48 border-2 border-zinc-200 rounded-full"></div>
                         
                         {/* Map Overlay Info & Filters */}
-                        <div className="absolute top-6 left-6 z-20 flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
-                            <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-zinc-200 shadow-sm flex flex-col gap-1 w-max">
-                                <h3 className="text-sm font-bold text-zinc-900 flex items-center gap-2">
-                                    <MapIcon size={16} className="text-red-600" /> Tactical View
+                        <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20 flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+                            <div className="bg-white/90 backdrop-blur-md px-3 py-2 md:px-4 md:py-2 rounded-2xl border border-zinc-200 shadow-sm flex flex-col gap-1 w-max">
+                                <h3 className="text-xs md:text-sm font-bold text-zinc-900 flex items-center gap-2">
+                                    <MapIcon size={14} className="md:w-4 md:h-4 text-red-600" /> Tactical View
                                 </h3>
                                 {/* Dynamic Wind */}
-                                <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                                <div className="flex items-center gap-2 text-[9px] md:text-[10px] text-zinc-500">
                                     <Wind size={12} style={{ transform: `rotate(${weather.dir === 'N' ? 0 : weather.dir === 'E' ? 90 : 180}deg)`}}/> 
                                     Wind: {weather.dir} {weather.wind}km/h
                                 </div>
@@ -352,14 +358,14 @@ export default function FireResponse() {
                                 setSelectedIncidentId(inc.id);
                             }}
                           >
-                            <span className="absolute -inset-8 rounded-full bg-red-500/10 animate-ping"></span>
-                            <span className="absolute -inset-4 rounded-full bg-red-500/20 animate-pulse"></span>
-                            <div className={`w-8 h-8 rounded-full border-2 border-white shadow-xl flex items-center justify-center transition-transform hover:scale-110 ${selectedIncidentId === inc.id ? 'bg-zinc-900 scale-125' : 'bg-red-600'}`}>
-                                <Flame size={14} className="text-white fill-white" />
+                            <span className="absolute -inset-6 md:-inset-8 rounded-full bg-red-500/10 animate-ping"></span>
+                            <span className="absolute -inset-3 md:-inset-4 rounded-full bg-red-500/20 animate-pulse"></span>
+                            <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 border-white shadow-xl flex items-center justify-center transition-transform hover:scale-110 ${selectedIncidentId === inc.id ? 'bg-zinc-900 scale-125' : 'bg-red-600'}`}>
+                                <Flame size={12} className="md:w-3.5 md:h-3.5 text-white fill-white" />
                             </div>
                             
-                            {/* Hover Tooltip */}
-                            <div className="absolute top-10 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-3 py-2 rounded-xl shadow-lg whitespace-nowrap opacity-0 group-hover/marker:opacity-100 transition-opacity z-20 pointer-events-none">
+                            {/* Hover Tooltip - Hidden on mobile, shown on desktop hover */}
+                            <div className="hidden md:block absolute top-10 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-3 py-2 rounded-xl shadow-lg whitespace-nowrap opacity-0 group-hover/marker:opacity-100 transition-opacity z-20 pointer-events-none">
                                 <p className="text-[10px] font-bold uppercase text-red-400">{inc.type}</p>
                                 <p className="text-[10px] text-zinc-300">{inc.loc}</p>
                             </div>
@@ -374,7 +380,7 @@ export default function FireResponse() {
                             initial={{ y: 100, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             exit={{ y: 100, opacity: 0 }}
-                            className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-xl p-4 rounded-3xl border border-zinc-200 shadow-xl z-30 flex justify-between items-center"
+                            className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-xl p-4 rounded-3xl border border-zinc-200 shadow-xl z-30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0"
                             onClick={(e) => e.stopPropagation()}
                           >
                              <div>
@@ -385,17 +391,17 @@ export default function FireResponse() {
                                   {selectedIncident.dispatched} Unit(s) on scene
                                 </p>
                              </div>
-                             <div className="flex gap-2">
+                             <div className="flex gap-2 w-full sm:w-auto">
                                 <button 
                                   onClick={() => handleResolve(selectedIncident.id)}
-                                  className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold uppercase hover:bg-emerald-100 border border-emerald-100 transition-colors"
+                                  className="flex-1 sm:flex-none px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-xs font-bold uppercase hover:bg-emerald-100 border border-emerald-100 transition-colors"
                                 >
                                   Resolve
                                 </button>
                                 <button 
                                   onClick={() => handleDispatch(selectedIncident.id)}
                                   disabled={unitsAvailable === 0}
-                                  className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold uppercase hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                                  className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-bold uppercase hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                                 >
                                   <Truck size={14} /> Dispatch +1
                                 </button>
@@ -408,11 +414,11 @@ export default function FireResponse() {
                         </AnimatePresence>
 
                         {/* Legend */}
-                        <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md p-3 rounded-2xl border border-zinc-200 shadow-sm flex gap-4 pointer-events-none">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
+                        <div className="absolute bottom-4 md:bottom-6 right-4 md:right-6 bg-white/90 backdrop-blur-md p-2 md:p-3 rounded-2xl border border-zinc-200 shadow-sm flex flex-col md:flex-row gap-2 md:gap-4 pointer-events-none">
+                            <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-bold text-zinc-500">
                                 <span className="w-2 h-2 bg-red-600 rounded-full animate-pulse"></span> Active Fire
                             </div>
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
+                            <div className="flex items-center gap-2 text-[9px] md:text-[10px] font-bold text-zinc-500">
                                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span> Hydrant
                             </div>
                         </div>
@@ -420,10 +426,11 @@ export default function FireResponse() {
                 </div>
 
                 {/* Analytics Row */}
+                {/* RESPONSIVE: Stack on mobile, side-by-side on desktop */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     
                     {/* Causes Chart */}
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-zinc-200 shadow-sm">
+                    <div className="bg-white p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-200 shadow-sm">
                         <h3 className="font-bold text-sm text-zinc-900 mb-6">Incident Causes</h3>
                         <div className="h-40 w-full">
                             <ResponsiveContainer width="100%" height="100%">
@@ -447,7 +454,7 @@ export default function FireResponse() {
                     </div>
 
                     {/* Response Trend (Live) */}
-                    <div className="bg-white p-6 rounded-[2.5rem] border border-zinc-200 shadow-sm">
+                    <div className="bg-white p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] border border-zinc-200 shadow-sm">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="font-bold text-sm text-zinc-900">Response Time</h3>
                             <span className="text-[10px] font-bold bg-blue-50 text-blue-600 px-2 py-1 rounded-md flex items-center gap-1">
@@ -479,7 +486,7 @@ export default function FireResponse() {
             <div className="lg:col-span-4 flex flex-col gap-6">
                 
                 {/* Resource Status */}
-                <div className="bg-zinc-900 text-white rounded-[2.5rem] p-8 shadow-xl shadow-zinc-200 relative overflow-hidden">
+                <div className="bg-zinc-900 text-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-xl shadow-zinc-200 relative overflow-hidden">
                     <div className="relative z-10">
                         <div className="flex justify-between items-center mb-6">
                             <h3 className="font-bold text-lg">Station HQ</h3>
@@ -544,7 +551,7 @@ export default function FireResponse() {
                 </div>
 
                 {/* Incident Log (Interactive) */}
-                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm flex-1 flex flex-col">
+                <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-6 shadow-sm flex-1 flex flex-col">
                     <div className="flex items-center justify-between mb-6 px-2">
                         <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Live Log</h3>
                         <div className="flex gap-1">

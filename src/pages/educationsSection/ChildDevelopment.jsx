@@ -95,52 +95,54 @@ const MetricCard = ({ item, isActive, onClick }) => (
         onClick={onClick}
         whileHover={{ y: -4, scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className={`rounded-3xl p-5 h-48 flex flex-col justify-between shadow-sm border transition-all duration-300 group cursor-pointer relative overflow-hidden ${
+        // RESPONSIVE: Height and padding adjustments
+        className={`rounded-3xl p-4 md:p-5 h-40 md:h-48 flex flex-col justify-between shadow-sm border transition-all duration-300 group cursor-pointer relative overflow-hidden ${
             isActive 
             ? 'bg-amber-500 border-amber-500 text-white shadow-amber-500/30 shadow-lg' 
             : 'bg-white border-zinc-100 hover:shadow-xl hover:shadow-amber-500/5'
         }`}
     >
         <div className="flex justify-between items-start z-10">
-            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 ${
+            <div className={`w-8 h-8 md:w-10 md:h-10 rounded-2xl flex items-center justify-center transition-colors duration-300 ${
                 isActive ? 'bg-white/20 text-white' : 'bg-zinc-50 text-zinc-900 group-hover:bg-amber-500 group-hover:text-white'
             }`}>
-                <item.icon size={20} />
+                <item.icon size={18} className="md:w-5 md:h-5" />
             </div>
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
+            <div className={`w-6 h-6 md:w-7 md:h-7 rounded-full flex items-center justify-center transition-colors ${
                 isActive ? 'bg-white/20 text-white' : 'bg-zinc-100 text-zinc-400 group-hover:text-amber-600'
             }`}>
-                <ArrowUpRight size={14} />
+                <ArrowUpRight size={12} className="md:w-[14px]" />
             </div>
         </div>
         <div className="z-10 mt-auto">
             <div className="flex justify-between items-end mb-1">
-                <h3 className={`text-3xl font-bold tracking-tight leading-none transition-colors ${
+                {/* RESPONSIVE: Font size */}
+                <h3 className={`text-2xl md:text-3xl font-bold tracking-tight leading-none transition-colors ${
                     isActive ? 'text-white' : 'text-zinc-900 group-hover:text-amber-600'
                 }`}>
                     {item.value}
                 </h3>
                 {/* Custom badge style for active state */}
-                <div className={`flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full ${
+                <div className={`flex items-center gap-1 text-[10px] md:text-xs font-medium px-2 py-1 rounded-full ${
                     isActive ? 'bg-white/20 text-white' : (item.trend > 0 ? 'bg-amber-50 text-amber-700' : 'bg-zinc-100 text-zinc-600')
                 }`}>
                       {item.trend > 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                       {Math.abs(item.trend)}%
                 </div>
             </div>
-            <p className={`text-xs font-medium uppercase tracking-wide ${isActive ? 'text-amber-100' : 'text-zinc-500'}`}>
+            <p className={`text-[10px] md:text-xs font-medium uppercase tracking-wide ${isActive ? 'text-amber-100' : 'text-zinc-500'}`}>
                 {item.label}
             </p>
         </div>
         <div className={`absolute -right-4 -bottom-4 transition-opacity duration-500 pointer-events-none ${
             isActive ? 'opacity-10 text-white' : 'opacity-0 group-hover:opacity-5 text-zinc-900'
         }`}>
-            <item.icon size={100} />
+            <item.icon size={80} className="md:w-[100px] md:h-[100px]" />
         </div>
     </motion.div>
 );
 
-// --- MODAL COMPONENT (NEW FEATURE 2: GROWTH UPDATE) ---
+// --- MODAL COMPONENT ---
 const UpdateGrowthModal = ({ isOpen, onClose, currentData, onSave }) => {
     const [height, setHeight] = useState(currentData.height);
     const [weight, setWeight] = useState(currentData.weight);
@@ -153,7 +155,8 @@ const UpdateGrowthModal = ({ isOpen, onClose, currentData, onSave }) => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-white rounded-[2rem] w-full max-w-sm p-6 shadow-2xl relative"
+                // RESPONSIVE: Width adjustment
+                className="bg-white rounded-[2rem] w-[90%] md:w-full max-w-sm p-6 shadow-2xl relative"
             >
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-lg font-bold text-zinc-900">Update Measurements</h3>
@@ -276,18 +279,19 @@ export default function ChildDevelopment() {
         </AnimatePresence>
 
         {/* HEADER CONTROLS */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+        {/* RESPONSIVE: Stack vertical on mobile, row on desktop */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6 mb-6 md:mb-8">
             <div className="flex items-center gap-3">
                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-amber-200 shadow-sm">
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                    <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Stunting Prevention Active</span>
+                    <span className="text-[10px] md:text-xs font-semibold text-amber-700 uppercase tracking-wide">Stunting Prevention Active</span>
                 </div>
             </div>
 
             {/* Wellbeing Score Widget */}
-            <div className="bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 border-4 border-white shadow-sm">
-                    <Smile size={24} />
+            <div className="w-full md:w-auto bg-white p-2 pr-6 rounded-[2rem] border border-zinc-200 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 border-4 border-white shadow-sm shrink-0">
+                    <Smile size={20} className="md:w-6 md:h-6" />
                 </div>
                 <div>
                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Wellbeing Index</p>
@@ -296,7 +300,7 @@ export default function ChildDevelopment() {
                             key={wellbeingScore} // Animate when score changes
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-2xl font-bold text-zinc-900"
+                            className="text-xl md:text-2xl font-bold text-zinc-900"
                         >
                             {wellbeingScore}
                         </motion.span>
@@ -307,8 +311,8 @@ export default function ChildDevelopment() {
         </div>
 
         {/* KPI SECTION (INTERACTIVE) */}
-        <section className="mb-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <section className="mb-6 md:mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                 {KPI_DATA_BASE.map((kpi) => (
                     <MetricCard 
                         key={kpi.id} 
@@ -321,28 +325,29 @@ export default function ChildDevelopment() {
         </section>
 
         {/* MAIN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* RESPONSIVE: 1 col mobile, 12 cols desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
             
             {/* LEFT: DATA VISUALIZATION (8 Cols) */}
-            <div className="lg:col-span-8 flex flex-col gap-8">
+            <div className="lg:col-span-8 flex flex-col gap-6 md:gap-8">
                 
                 {/* Health Trend Chart (DYNAMIC) */}
-                <div className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-zinc-200">
-                    <div className="flex justify-between items-center mb-8">
+                <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-8 shadow-sm border border-zinc-200">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0 mb-6 md:mb-8">
                         <div>
-                            <h3 className="text-lg font-bold text-zinc-900 tracking-tight">{activeKpi} Trends</h3>
+                            <h3 className="text-base md:text-lg font-bold text-zinc-900 tracking-tight">{activeKpi} Trends</h3>
                             <p className="text-xs text-zinc-500 uppercase tracking-wide">
                                 Data for {timeRange === '1Y' ? 'Past 12 Months' : 'Past 6 Months'}
                             </p>
                         </div>
                         
                         {/* Time Range Selector */}
-                        <div className="flex bg-zinc-100 rounded-full p-1 border border-zinc-200">
+                        <div className="flex bg-zinc-100 rounded-full p-1 border border-zinc-200 self-start sm:self-auto">
                             {['6M', '1Y'].map((range) => (
                                 <button
                                     key={range}
                                     onClick={() => setTimeRange(range)}
-                                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                                    className={`px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-bold transition-all ${
                                         timeRange === range 
                                         ? 'bg-white text-zinc-900 shadow-sm' 
                                         : 'text-zinc-500 hover:text-zinc-700'
@@ -354,7 +359,7 @@ export default function ChildDevelopment() {
                         </div>
                     </div>
                     
-                    <div className="h-[280px] w-full">
+                    <div className="h-[200px] md:h-[280px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData}>
                                 <defs>
@@ -364,7 +369,7 @@ export default function ChildDevelopment() {
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 12, fill: '#a1a1aa'}} dy={10} />
+                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: '#a1a1aa'}} dy={10} />
                                 <Tooltip 
                                     contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} 
                                     itemStyle={{ color: '#d97706', fontWeight: 'bold' }}
@@ -384,15 +389,15 @@ export default function ChildDevelopment() {
                 </div>
 
                 {/* Secondary Charts Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                     
                     {/* Participation Bar */}
-                    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-200">
-                        <div className="flex items-center gap-2 mb-6">
+                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm border border-zinc-200">
+                        <div className="flex items-center gap-2 mb-4 md:mb-6">
                             <Users size={16} className="text-amber-500" />
                             <h4 className="text-sm font-bold text-zinc-900">Program Participation</h4>
                         </div>
-                        <div className="h-48">
+                        <div className="h-40 md:h-48">
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={PARTICIPATION_DATA}>
                                     <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ borderRadius: '12px', border: 'none' }} />
@@ -408,12 +413,12 @@ export default function ChildDevelopment() {
                     </div>
 
                     {/* Age Demographics Pie */}
-                    <div className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-zinc-200 relative overflow-hidden">
+                    <div className="bg-white rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm border border-zinc-200 relative overflow-hidden">
                         <div className="flex items-center gap-2 mb-2 relative z-10">
                             <Baby size={16} className="text-amber-500" />
                             <h4 className="text-sm font-bold text-zinc-900">Age Distribution</h4>
                         </div>
-                        <div className="h-48 relative z-10">
+                        <div className="h-40 md:h-48 relative z-10">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie 
@@ -446,9 +451,9 @@ export default function ChildDevelopment() {
                 </div>
 
                 {/* Modules List (FILTERABLE) */}
-                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm min-h-[400px]">
+                <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm min-h-[400px]">
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 px-2 gap-4">
-                        <h3 className="text-lg font-bold text-zinc-900 tracking-tight">Parenting Modules</h3>
+                        <h3 className="text-base md:text-lg font-bold text-zinc-900 tracking-tight">Parenting Modules</h3>
                         
                         {/* Search Bar */}
                         <div className="relative w-full md:w-64 group">
@@ -494,7 +499,7 @@ export default function ChildDevelopment() {
                                 </motion.div>
                             ))
                         ) : (
-                            <div className="col-span-2 text-center py-8 text-zinc-400 text-sm">
+                            <div className="col-span-1 md:col-span-2 text-center py-8 text-zinc-400 text-sm">
                                 No modules found matching "{searchQuery}"
                             </div>
                         )}
@@ -505,10 +510,10 @@ export default function ChildDevelopment() {
             </div>
 
             {/* RIGHT: TOOLS & SUPPORT (4 Cols) */}
-            <div className="lg:col-span-4 flex flex-col gap-6">
+            <div className="lg:col-span-4 flex flex-col gap-6 md:gap-6">
                 
                 {/* Growth Tracker Widget (INTERACTIVE) */}
-                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-8 shadow-lg shadow-amber-500/5 relative overflow-hidden group">
+                <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-lg shadow-amber-500/5 relative overflow-hidden group">
                     <div className="flex items-center justify-between mb-6 relative z-10">
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center text-amber-600">
@@ -529,7 +534,7 @@ export default function ChildDevelopment() {
                     </div>
 
                     <div className="space-y-6 relative z-10">
-                        {/* Height Bar - Logic: Max 120cm for visual */}
+                        {/* Height Bar */}
                         <div>
                             <div className="flex justify-between text-xs font-bold mb-1">
                                 <span className="text-zinc-500">Height</span>
@@ -544,7 +549,7 @@ export default function ChildDevelopment() {
                                 />
                             </div>
                         </div>
-                        {/* Weight Bar - Logic: Max 30kg for visual */}
+                        {/* Weight Bar */}
                         <div>
                             <div className="flex justify-between text-xs font-bold mb-1">
                                 <span className="text-zinc-500">Weight</span>
@@ -575,7 +580,7 @@ export default function ChildDevelopment() {
                 </div>
 
                 {/* DAILY MILESTONES (INTERACTIVE) */}
-                <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 shadow-sm">
+                <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="font-bold text-sm text-zinc-900">Daily Checklist</h3>
                         <span className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-colors ${
@@ -610,7 +615,7 @@ export default function ChildDevelopment() {
                 </div>
 
                 {/* Community Support (Dark) */}
-                <div className="bg-zinc-900 text-white rounded-[2.5rem] p-8 shadow-sm">
+                <div className="bg-zinc-900 text-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-sm">
                     <div className="flex items-center justify-between mb-6">
                         <h3 className="font-bold text-sm">Community Support</h3>
                         <ShieldCheck size={16} className="text-amber-400" />
@@ -641,11 +646,11 @@ export default function ChildDevelopment() {
         </div>
 
         {/* FLOATING QUICK ACTIONS */}
-        <div className="fixed bottom-8 right-8 flex flex-col gap-3 z-40">
+        <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 flex flex-col gap-3 z-40">
             <motion.button 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="w-12 h-12 bg-white text-zinc-900 rounded-full shadow-lg border border-zinc-100 flex items-center justify-center hover:bg-zinc-50"
+                className="w-10 h-10 md:w-12 md:h-12 bg-white text-zinc-900 rounded-full shadow-lg border border-zinc-100 flex items-center justify-center hover:bg-zinc-50"
                 title="Consultation"
             >
                 <MessageCircle size={20} className="text-amber-600" />
@@ -653,7 +658,7 @@ export default function ChildDevelopment() {
             <motion.button 
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                className="w-14 h-14 bg-rose-500 text-white rounded-full shadow-xl shadow-rose-500/30 flex items-center justify-center hover:bg-rose-600"
+                className="w-12 h-12 md:w-14 md:h-14 bg-rose-500 text-white rounded-full shadow-xl shadow-rose-500/30 flex items-center justify-center hover:bg-rose-600"
                 title="Emergency Hotline"
             >
                 <Phone size={24} />
